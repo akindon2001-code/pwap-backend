@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PWAP — Pension Workflow Automation Platform</title>
+<style>
+  :root{
+    --ink:#0F2748; --ink-2:#1C3A5E; --gold:#C7973F; --gold-soft:#EADFC2;
+    --bg:#EEF1F5; --surface:#FFFFFF; --line:#DCE2EA; --line-2:#EAEEF3;
+    --text:#25313F; --muted:#6A7684;
+    --ok:#1E7F5C; --ok-bg:#E4F3EC; --warn:#9C6410; --warn-bg:#FBEFD5;
+    --bad:#B23A28; --bad-bg:#F8E4E0; --info:#2A5D9E; --info-bg:#E7EEF8;
+    --serif:Georgia,"Times New Roman",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --radius:10px; --shadow:0 1px 2px rgba(16,39,72,.06),0 6px 20px rgba(16,39,72,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:var(--sans);color:var(--text);background:var(--bg);font-size:14.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  button{font-family:inherit;cursor:pointer}
+  :focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:6px}
+
+  /* ---------- Login ---------- */
+  .login{min-height:100vh;display:grid;place-items:center;background:
+     radial-gradient(1200px 600px at 20% -10%,#183a63 0,transparent 60%),
+     radial-gradient(900px 500px at 110% 10%,#12305a 0,transparent 55%),var(--ink)}
+  .login-card{width:min(440px,92vw);background:var(--surface);border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.35);overflow:hidden}
+  .login-head{padding:30px 34px 22px;border-bottom:1px solid var(--line)}
+  .login-body{padding:22px 34px 30px}
+  .brand{display:flex;align-items:center;gap:12px}
+  .mark{width:40px;height:40px;border-radius:9px;background:linear-gradient(150deg,var(--ink) 0,var(--ink-2) 100%);
+     display:grid;place-items:center;color:var(--gold);font-family:var(--serif);font-weight:700;font-size:20px;flex:none;border:1px solid rgba(199,151,63,.5)}
+  .brand-name{font-family:var(--serif);font-size:20px;font-weight:700;color:var(--ink);letter-spacing:.2px}
+  .brand-sub{font-size:11px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase}
+  .login h1{font-family:var(--serif);font-size:19px;margin:2px 0 4px;color:var(--ink)}
+  .login p.lede{color:var(--muted);margin:0 0 18px;font-size:13px}
+  .role-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .role-btn{text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 13px;transition:.15s;display:flex;flex-direction:column;gap:3px}
+  .role-btn:hover{border-color:var(--gold);box-shadow:var(--shadow);transform:translateY(-1px)}
+  .role-btn .rt{font-weight:650;color:var(--ink);font-size:13.5px}
+  .role-btn .rd{font-size:11.5px;color:var(--muted)}
+  .login-foot{margin-top:18px;font-size:11.5px;color:var(--muted);text-align:center}
+  .cred-hint{margin-top:14px;font-size:11.5px;color:var(--muted);background:#F6F8FB;border:1px solid var(--line);border-radius:9px;padding:10px 12px;line-height:1.7}
+  .cred-hint b{color:var(--ink)} .cred-hint code{font-family:var(--mono);background:#fff;border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--ink)}
+  .tag{display:inline-block;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--warn);background:var(--warn-bg);border:1px solid #EAD6A6;padding:2px 8px;border-radius:20px}
+
+  /* ---------- App shell ---------- */
+  .app{display:none;grid-template-columns:248px 1fr;min-height:100vh}
+  .app.show{display:grid}
+  .side{background:var(--ink);color:#C9D6E6;padding:0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+  .side-brand{padding:18px 18px 16px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:11px}
+  .side-brand .brand-name{color:#fff;font-size:17px}
+  .side-brand .brand-sub{color:#8aa0bd}
+  .nav{padding:12px 10px;flex:1;overflow:auto}
+  .nav-label{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#7c93b3;margin:10px 12px 6px}
+  .nav-item{display:flex;align-items:center;gap:11px;width:100%;background:transparent;border:0;color:#C9D6E6;padding:9px 12px;border-radius:8px;text-align:left;font-size:13.5px;transition:.12s}
+  .nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
+  .nav-item.active{background:linear-gradient(90deg,rgba(199,151,63,.22),rgba(199,151,63,.05));color:#fff;box-shadow:inset 3px 0 0 var(--gold)}
+  .nav-ico{width:18px;height:18px;flex:none;opacity:.85}
+  .side-foot{padding:12px 14px;border-top:1px solid rgba(255,255,255,.08);font-size:11px;color:#7c93b3}
+  .side-foot button{background:transparent;border:1px solid rgba(255,255,255,.16);color:#c9d6e6;border-radius:7px;padding:6px 10px;font-size:12px;width:100%;margin-top:8px}
+  .side-foot button:hover{border-color:var(--gold);color:#fff}
+
+  .main{min-width:0;display:flex;flex-direction:column}
+  .topbar{position:sticky;top:0;z-index:5;background:rgba(255,255,255,.9);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);
+     padding:12px 26px;display:flex;align-items:center;gap:16px}
+  .crumb{font-size:12px;color:var(--muted)}
+  .crumb b{color:var(--ink);font-weight:600}
+  .top-title{font-family:var(--serif);font-size:18px;color:var(--ink);margin:0}
+  .spacer{flex:1}
+  .pill{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:4px 11px;display:inline-flex;gap:7px;align-items:center;background:#fff}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px var(--ok-bg)}
+  .role-switch{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+  .role-switch select{font-family:inherit;font-size:13px;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 9px;background:#fff}
+  .content{padding:24px 26px 60px;max-width:1180px;width:100%}
+
+  /* ---------- Bits ---------- */
+  .section-h{font-family:var(--serif);color:var(--ink);font-size:16px;margin:2px 0 2px}
+  .section-sub{color:var(--muted);font-size:12.5px;margin:0 0 16px}
+  .grid{display:grid;gap:16px}
+  .cards-4{grid-template-columns:repeat(4,1fr)}
+  .cards-3{grid-template-columns:repeat(3,1fr)}
+  .cards-2{grid-template-columns:1.4fr 1fr}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .card.p{padding:18px}
+  .kpi{padding:16px 16px 14px}
+  .kpi .k-l{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:7px}
+  .kpi .k-v{font-family:var(--serif);font-size:27px;color:var(--ink);margin:8px 0 2px;font-weight:700;letter-spacing:-.5px}
+  .kpi .k-n{font-size:11.5px;color:var(--muted)}
+  .kpi .k-n.up{color:var(--ok)} .kpi .k-n.down{color:var(--bad)}
+  .k-accent{height:3px;border-radius:3px;background:var(--gold);width:34px;margin-bottom:12px}
+
+  .card-h{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-bottom:1px solid var(--line-2)}
+  .card-h h3{font-family:var(--serif);font-size:14.5px;color:var(--ink);margin:0}
+  .card-h .hint{font-size:11.5px;color:var(--muted)}
+  .card-b{padding:16px 18px}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{ text-align:left;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:9px 12px;border-bottom:1px solid var(--line)}
+  td{padding:11px 12px;border-bottom:1px solid var(--line-2);vertical-align:middle}
+  tr:last-child td{border-bottom:0}
+  tbody tr:hover{background:#FAFBFD}
+  .mono{font-family:var(--mono);font-size:12.5px}
+  .num{font-variant-numeric:tabular-nums;font-family:var(--mono)}
+
+  .badge{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:20px;border:1px solid transparent;white-space:nowrap}
+  .b-ok{color:var(--ok);background:var(--ok-bg);border-color:#CBE7D9}
+  .b-warn{color:var(--warn);background:var(--warn-bg);border-color:#EAD6A6}
+  .b-bad{color:var(--bad);background:var(--bad-bg);border-color:#EFCabe}
+  .b-info{color:var(--info);background:var(--info-bg);border-color:#CDDCEF}
+  .b-mut{color:var(--muted);background:#F1F4F7;border-color:var(--line)}
+  .b-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+  .btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;transition:.13s;display:inline-flex;align-items:center;gap:8px}
+  .btn:hover{border-color:var(--gold);box-shadow:var(--shadow)}
+  .btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .btn.primary:hover{background:var(--ink-2)}
+  .btn.gold{background:var(--gold);border-color:var(--gold);color:#241a06}
+  .btn.gold:hover{filter:brightness(1.05)}
+  .btn.sm{padding:5px 10px;font-size:12px}
+  .btn.ghost{background:transparent;border-color:transparent;color:var(--info)}
+  .btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none;border-color:var(--line)}
+  .btn-row{display:flex;gap:9px;flex-wrap:wrap}
+
+  /* Workflow tracker (signature) */
+  .tracker{display:flex;align-items:flex-start;gap:0;margin:6px 0 4px;overflow-x:auto;padding:6px 2px 10px}
+  .stage{flex:1 0 0;min-width:104px;position:relative;text-align:center}
+  .stage .bar{position:absolute;top:15px;left:calc(-50% + 16px);right:calc(50% + 16px);height:2px;background:var(--line)}
+  .stage.done .bar,.stage.cur .bar{background:var(--gold)}
+  .stage:first-child .bar{display:none}
+  .node{width:32px;height:32px;border-radius:50%;margin:0 auto 8px;display:grid;place-items:center;background:#fff;border:2px solid var(--line);color:var(--muted);font-size:13px;font-weight:700;position:relative;z-index:1;font-family:var(--mono)}
+  .stage.done .node{background:var(--ink);border-color:var(--ink);color:#fff}
+  .stage.cur .node{border-color:var(--gold);color:var(--ink);box-shadow:0 0 0 4px rgba(199,151,63,.18)}
+  .stage.cur.overdue .node{border-color:var(--bad);color:var(--bad);animation:flare 1.4s ease-in-out infinite}
+  @keyframes flare{0%,100%{box-shadow:0 0 0 0 rgba(178,58,40,.32)}50%{box-shadow:0 0 0 7px rgba(178,58,40,0)}}
+  @media (prefers-reduced-motion:reduce){.stage.cur.overdue .node{animation:none;box-shadow:0 0 0 4px rgba(178,58,40,.28)}}
+  .stage .s-name{font-size:11.5px;color:var(--text);line-height:1.25;padding:0 4px}
+  .stage.cur .s-name{font-weight:700;color:var(--ink)}
+  .stage .s-sla{font-size:10.5px;color:var(--muted);margin-top:3px}
+
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12.5px;color:var(--ink);font-weight:600;margin-bottom:5px}
+  .field input,.field select{width:100%;font-family:inherit;font-size:13.5px;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--text)}
+  .field input:focus{border-color:var(--gold);outline:none}
+  .field .err{color:var(--bad);font-size:11.5px;margin-top:5px;display:none}
+  .field.bad input{border-color:var(--bad);background:#FEF7F5}
+  .field.bad .err{display:block}
+  .help{font-size:11.5px;color:var(--muted);margin-top:4px}
+
+  .notice{display:flex;gap:11px;padding:12px 14px;border-radius:9px;font-size:12.5px;align-items:flex-start}
+  .notice.info{background:var(--info-bg);color:#1f4a80;border:1px solid #CDDCEF}
+  .notice.warn{background:var(--warn-bg);color:#795012;border:1px solid #EAD6A6}
+  .notice.ok{background:var(--ok-bg);color:#155f44;border:1px solid #CBE7D9}
+  .stack{display:flex;flex-direction:column;gap:16px}
+  .row-between{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .muted{color:var(--muted)} .small{font-size:12px}
+  .kv{display:grid;grid-template-columns:150px 1fr;gap:6px 14px;font-size:13px}
+  .kv dt{color:var(--muted)} .kv dd{margin:0;color:var(--text)}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin-top:8px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .sw{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+  /* Modal */
+  .modal-bg{position:fixed;inset:0;background:rgba(15,39,72,.5);display:none;place-items:center;z-index:40;padding:20px}
+  .modal-bg.show{display:grid}
+  .modal{background:#fff;border-radius:14px;max-width:640px;width:100%;box-shadow:0 30px 80px rgba(0,0,0,.3);overflow:hidden;max-height:88vh;display:flex;flex-direction:column}
+  .modal-h{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+  .modal-h h3{font-family:var(--serif);color:var(--ink);margin:0;font-size:16px}
+  .modal-b{padding:20px 22px;overflow:auto}
+  .x{background:none;border:0;font-size:20px;color:var(--muted);line-height:1}
+
+  .toast{position:fixed;right:22px;bottom:22px;z-index:60;display:flex;flex-direction:column;gap:10px}
+  .toast .t{background:var(--ink);color:#fff;padding:12px 16px;border-radius:10px;font-size:13px;box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;gap:10px;align-items:center;border-left:3px solid var(--gold);animation:slidein .25s ease}
+  @keyframes slidein{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
+
+  @media (max-width:920px){
+    .app{grid-template-columns:1fr}
+    .side{position:static;height:auto;flex-direction:row;align-items:center;overflow-x:auto}
+    .side-brand{border:0}.nav{display:flex;gap:4px;padding:8px}.nav-label{display:none}.side-foot{display:none}
+    .cards-4{grid-template-columns:1fr 1fr}.cards-3{grid-template-columns:1fr}.cards-2{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login" id="login">
+  <div class="login-card">
+    <div class="login-head">
+      <div class="brand">
+        <div class="mark">P</div>
+        <div>
+          <div class="brand-name">PWAP</div>
+          <div class="brand-sub">Pension Workflow Automation</div>
+        </div>
+      </div>
+    </div>
+    <div class="login-body">
+      <h1>Sign in to continue</h1>
+      <p class="lede">Enter your credentials. Role-based access controls determine which modules and data you can see.</p>
+      <div class="field"><label for="u">Username</label>
+        <input id="u" autocomplete="username" placeholder="RSA PIN, phone, or staff username" oninput="clrErr()" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="field" id="pwrap"><label for="pw">Password</label>
+        <input id="pw" type="password" autocomplete="current-password" placeholder="Password" oninput="clrErr()" onkeydown="if(event.key==='Enter')doLogin()">
+        <div class="err">Incorrect username or password.</div></div>
+      <button class="btn primary" style="width:100%;justify-content:center" onclick="doLogin()">Sign in</button>
+      <div class="cred-hint" id="credHint"></div>
+      <div class="login-foot">
+        <span class="tag">Prototype · illustrative data</span><br><br>
+        Premium Pension Limited · aligned to ITIL 4 · PenCom-supervised
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app">
+  <aside class="side">
+    <div class="side-brand">
+      <div class="mark">P</div>
+      <div><div class="brand-name">PWAP</div><div class="brand-sub" id="sideSub">Console</div></div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="side-foot">
+      <div>Signed in as</div>
+      <div style="color:#fff;font-weight:600" id="whoami">—</div>
+      <button onclick="openAbout()">System &amp; technology</button>
+      <button onclick="logout()">Sign out</button>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="crumb"><b>PWAP</b> · <span id="crumbRole">—</span></div>
+        <h2 class="top-title" id="viewTitle">Dashboard</h2>
+      </div>
+      <div class="spacer"></div>
+      <span class="pill"><span class="dot"></span> System availability 99.7%</span>
+      <button class="pill" id="pseudoBtn" onclick="togglePseudo()" title="Toggle contributor name privacy" style="cursor:pointer">
+        <span class="b-dot" style="background:var(--gold)"></span> <span id="pseudoLbl">Names: pseudonymised</span></button>
+      <div class="role-switch" id="roleSwitch">
+        <label for="roleSel">View as</label>
+        <select id="roleSel" onchange="switchRole(this.value)"></select>
+      </div>
+    </div>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-h"><h3 id="modalTitle">Details</h3><button class="x" onclick="closeModal()">×</button></div>
+    <div class="modal-b" id="modalBody"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const SEED = {"claims": [{"id": "CLM-1050", "who": "Yohana Jonas Lema", "type": "Retirement", "stages": ["Submitted", "Identity verification", "Document completeness", "Departmental review", "Payment authorisation", "Completed"], "idx": 1, "elapsed": 2.4, "done": false}, {"id": "CLM-1047", "who": "Steven Sunday Omonale", "type": "Retirement (accrued rights)", "stages": ["Submitted", "Identity verification", "Document completeness", "Accrued rights (COBRA)", "Departmental review", "Payment authorisation", "Completed"], "idx": 3, "elapsed": 1.2, "done": false}, {"id": "CLM-1044", "who": "Sylvester Isoyip Odiong", "type": "Retirement", "stages": ["Submitted", "Identity verification", "Document completeness", "Departmental review", "Payment authorisation", "Completed"], "idx": 3, "elapsed": 0.4, "done": false}, {"id": "CLM-1041", "who": "Charles Iorpenda Agerl", "type": "Retirement", "stages": ["Submitted", "Identity verification", "Document completeness", "Departmental review", "Payment authorisation", "Completed"], "idx": 4, "elapsed": 0.3, "done": false}, {"id": "CLM-1038", "who": "Olanrewaju Mayowa Isinkaye", "type": "Retirement", "stages": ["Submitted", "Identity verification", "Document completeness", "Departmental review", "Payment authorisation", "Completed"], "idx": 5, "elapsed": 0.0, "done": true, "days": 2.4}, {"id": "CLM-1035", "who": "Clement Chukwudoluo Akaeme", "type": "Retirement", "stages": ["Submitted", "Identity verification", "Document completeness", "Departmental review", "Payment authorisation", "Completed"], "idx": 2, "elapsed": 0.6, "done": false}], "remit": {"loaded": false, "validated": false, "employer": "National Identity Management Commission", "period": "July 2025", "rows": [{"pin": "PEN100000021500", "name": "Steven Sunday Omonale", "amt": 75000, "flag": null}, {"pin": "PEN100000021661", "name": "Sylvester Isoyip Odiong", "amt": 58100, "flag": null}, {"pin": "PEN1000000241X", "name": "Clement Chukwudoluo Akaeme", "amt": 24200, "flag": "Invalid PIN"}, {"pin": "PEN100000024412", "name": "Charles Iorpenda Agerl", "amt": 22000, "flag": null}, {"pin": "PEN100000030206", "name": "Umaru Kwadon Saleh", "amt": 22000, "flag": null}, {"pin": "PEN000000023850", "name": "Olanrewaju Mayowa Isinkaye", "amt": 50000, "flag": "Incomplete biodata"}, {"pin": "PEN100000099999", "name": "Unknown holder", "amt": 33750, "flag": "Orphaned record"}]}, "approvals": [{"id": "REQ-508", "who": "Olanrewaju Mayowa Isinkaye", "field": "Bank account", "old": "— none on file —", "neu": "30••••••24 (Access) — new", "status": "pending", "biometric": true}, {"id": "REQ-506", "who": "Sylvester Isoyip Odiong", "field": "Next of kin", "old": "— none —", "neu": "Registered dependant (spouse)", "status": "pending", "biometric": false}], "audit": [{"mins": 36, "who": "Ibrahim Bello", "act": "Advanced claim", "det": "CLM-1047 → Accrued rights (COBRA)"}, {"mins": 58, "who": "System", "act": "Escalation raised", "det": "CLM-1050 exceeded SLA at Identity verification"}, {"mins": 124, "who": "Ngozi Eze", "act": "Generated report", "det": "PenCom exception report — June 2025"}, {"mins": 190, "who": "System", "act": "Remittance posted", "det": "Batch RMT-3388 · 4 records credited"}]};
+SEED.audit.forEach(function(e){e.t=new Date(Date.now()-(e.mins||0)*60000);});
+let ME = {"name": "Steven Sunday Omonale", "first": "Steven", "pin": "PEN100000021500", "bankMasked": "••••2985 (Guaranty Trust Bank Plc)", "recaptured": true, "employer": "National Identity Management Commission", "officer": "BABA, Abubakar Ajiya", "officerEmail": "abajiya@premiumpension.com", "officerPhone": "07012016529", "nok": null, "email": "sunday.nale@gmail.com", "phone": "08055241799", "dob6": "140268", "recaptureStatus": "Recapture Successful", "designation": "Sco", "age": 57, "exit": "E", "bankName": "Guaranty Trust Bank Plc", "accountName": "Omonale Steven Sunday", "branch": "Asokoro", "employerType": "PU", "employerState": null, "employerCode": "PU000039A006", "classPay": "ENBLOC", "classRet": "E", "dateEmployed": "15 Jul 1988", "dateRetired": "15 Jul 2023"};
+const REAL_SURNAMES = ["Agerl", "Ahmed", "Akaeme", "Akintobi", "Anne", "Aremu", "Chingyin", "Dairo", "Dau", "David", "Ige", "Isah", "Isinkaye", "Lema", "Mbam", "Modupe", "Mounkeregha", "Nwokpor", "Odiong", "Ojo", "Okoronkwo", "Omonale", "Salami", "Saleh", "Usang"];
+const PEOPLE = [{"name": "Olanrewaju Mayowa Isinkaye", "first": "Olanrewaju", "pin": "PEN000000023850", "bankMasked": "— none on file —", "recaptured": false, "employer": "D N C R", "officer": "BABA, Abubakar Ajiya", "officerEmail": "abajiya@premiumpension.com", "officerPhone": "07012016529", "nok": "Seun Modupe", "email": "sinkaylar@yahoo.com", "phone": "08023249075", "dob6": "180174", "recaptureStatus": "Not Recaptured", "designation": "Compt Optr", "age": 51, "exit": null, "bankName": null, "accountName": null, "branch": "Wuse", "employerType": "PU", "employerState": "Fct Abuja", "employerCode": "PU000039A003", "classPay": null, "classRet": "C", "dateEmployed": "24 Jul 2002", "dateRetired": null}, {"name": "Steven Sunday Omonale", "first": "Steven", "pin": "PEN100000021500", "bankMasked": "••••2985 (Guaranty Trust Bank Plc)", "recaptured": true, "employer": "National Identity Management Commission", "officer": "BABA, Abubakar Ajiya", "officerEmail": "abajiya@premiumpension.com", "officerPhone": "07012016529", "nok": null, "email": "sunday.nale@gmail.com", "phone": "08055241799", "dob6": "140268", "recaptureStatus": "Recapture Successful", "designation": "Sco", "age": 57, "exit": "E", "bankName": "Guaranty Trust Bank Plc", "accountName": "Omonale Steven Sunday", "branch": "Asokoro", "employerType": "PU", "employerState": null, "employerCode": "PU000039A006", "classPay": "ENBLOC", "classRet": "E", "dateEmployed": "15 Jul 1988", "dateRetired": "15 Jul 2023"}, {"name": "Sylvester Isoyip Odiong", "first": "Sylvester", "pin": "PEN100000021661", "bankMasked": "••••8271 (Ecobank)", "recaptured": true, "employer": "Ministry Of Women Affairs", "officer": "WAIDI, Yusuf", "officerEmail": "wyusuf@premiumpension.com", "officerPhone": "08126131295", "nok": null, "email": null, "phone": "08050285001", "dob6": "010763", "recaptureStatus": "Recapture Successful", "designation": "Executive Officer", "age": 62, "exit": "R", "bankName": "Ecobank", "accountName": "Odiong Sylvester Isoyip", "branch": "Central Business Distrct", "employerType": "PU", "employerState": "Fct Abuja", "employerCode": "PU000024A001", "classPay": "ANNUITY", "classRet": "R", "dateEmployed": "03 Dec 1986", "dateRetired": "03 Dec 2021"}, {"name": "Olanrewaju Mayowa Isinkaye", "first": "Olanrewaju", "pin": "PEN100000023862", "bankMasked": "— none on file —", "recaptured": true, "employer": "National Identity Management Commission", "officer": "BABA, Abubakar Ajiya", "officerEmail": "abajiya@premiumpension.com", "officerPhone": "07012016529", "nok": null, "email": "lanresinkay@gmail.com", "phone": "07039893913", "dob6": "180174", "recaptureStatus": "Recapture Successful", "designation": "Contributor", "age": 51, "exit": null, "bankName": null, "accountName": null, "branch": "Wuse", "employerType": "PU", "employerState": "Fct Abuja", "employerCode": "PU000039A006", "classPay": null, "classRet": "C", "dateEmployed": "24 Jul 2002", "dateRetired": null}, {"name": "Clement Chukwudoluo Akaeme", "first": "Clement", "pin": "PEN100000024111", "bankMasked": "••••2828 (Fidelity Bank Plc)", "recaptured": false, "employer": "Office Of The Secretary To The State Gov", "officer": "Victoria Bature", "officerEmail": "vbature@premiumpension.com", "officerPhone": "07080007585", "nok": null, "email": "akaemeclem@yahoo.com", "phone": "08030927093", "dob6": "121256", "recaptureStatus": "Not Recaptured", "designation": "Staff", "age": 69, "exit": "N", "bankName": "Fidelity Bank Plc", "accountName": "Akaeme Clement Chukwudoluo", "branch": "Central Business Distrct", "employerType": "ST", "employerState": "Fct Abuja", "employerCode": "STKDPAR00045", "classPay": "ANNUITY", "classRet": "N", "dateEmployed": "03 Dec 2018", "dateRetired": null}, {"name": "Boniface Joseph Mbam", "first": "Boniface", "pin": "PEN100000024200", "bankMasked": "— none on file —", "recaptured": false, "employer": "D N C R", "officer": "BABA, Abubakar Ajiya", "officerEmail": "abajiya@premiumpension.com", "officerPhone": "07012016529", "nok": "Kemi Anne", "email": "beacem4u@yahoo.co.uk", "phone": "08057050986", "dob6": "270982", "recaptureStatus": "Not Recaptured", "designation": "Compter Operato", "age": 43, "exit": null, "bankName": null, "accountName": null, "branch": "Wuse", "employerType": "PU", "employerState": "Fct Abuja", "employerCode": "PU000039A003", "classPay": null, "classRet": "C", "dateEmployed": "15 May 2003", "dateRetired": null}, {"name": "Mohammed AL-SUKUN Ahmed", "first": "Mohammed", "pin": "PEN100000024331", "bankMasked": "— none on file —", "recaptured": false, "employer": "The Presidency", "officer": "BOLARINWA, Opeyemi Fuad", "officerEmail": "ofbolarinwa@premiumpension.com", "officerPhone": "09022271452", "nok": null, "email": "ahmedal_sukun@yahoo.com", "phone": null, "dob6": "251274", "recaptureStatus": "Not Recaptured", "designation": "Contributor", "age": 51, "exit": null, "bankName": null, "accountName": null, "branch": "Ikoyi", "employerType": "PU", "employerState": null, "employerCode": "PUPRESIDENCY", "classPay": null, "classRet": "C", "dateEmployed": "28 Apr 2016", "dateRetired": null}, {"name": "Charles Iorpenda Agerl", "first": "Charles", "pin": "PEN100000024412", "bankMasked": "••••0860 (First Bank of Nigeria Plc)", "recaptured": true, "employer": "National Poverty Eradication Programme", "officer": "Victoria Bature", "officerEmail": "vbature@premiumpension.com", "officerPhone": "07080007585", "nok": null, "email": "charlesagerl@gmail.com", "phone": "08025663000", "dob6": "080162", "recaptureStatus": "Recapture Successful", "designation": "Hso", "age": 63, "exit": "R", "bankName": "First Bank of Nigeria Plc", "accountName": "Agerl Charles Iorpenda", "branch": "Central Business Distrct", "employerType": "PU", "employerState": "Fct Abuja", "employerCode": "PU000020F017", "classPay": "ANNUITY", "classRet": "R", "dateEmployed": "14 Dec 1983", "dateRetired": "14 Dec 2018"}, {"name": "Jinason Kwashi Chingyin", "first": "Jinason", "pin": "PEN100000029913", "bankMasked": "— none on file —", "recaptured": false, "employer": "Ministry Of Finance", "officer": "WAIDI, Yusuf", "officerEmail": "wyusuf@premiumpension.com", "officerPhone": "08126131295", "nok": null, "email": "jiireetkwashi@yahoo.com", "phone": "08036175238", "dob6": "200257", "recaptureStatus": "Not Recaptured", "designation": "Contributor", "age": 68, "exit": null, "bankName": null, "accountName": null, "branch": "Central Business Distrct", "employerType": "PU", "employerState": "Fct Abuja", "employerCode": "PU000035A001", "classPay": null, "classRet": "C", "dateEmployed": "07 Nov 2017", "dateRetired": null}, {"name": "Alaba Abiodun Aremu", "first": "Alaba", "pin": "PEN100000030004", "bankMasked": "— none on file —", "recaptured": false, "employer": "D N C R", "officer": "BABA, Abubakar Ajiya", "officerEmail": "abajiya@premiumpension.com", "officerPhone": "07012016529", "nok": null, "email": null, "phone": "08137097141", "dob6": "010154", "recaptureStatus": "Not Recaptured", "designation": "Contributor", "age": 71, "exit": null, "bankName": null, "accountName": null, "branch": "Wuse", "employerType": "PU", "employerState": "Fct Abuja", "employerCode": "PU000039A003", "classPay": null, "classRet": "C", "dateEmployed": "15 Aug 2012", "dateRetired": null}, {"name": "Ifeanyichukwu Collins Okoronkwo", "first": "Ifeanyichukwu", "pin": "PEN100000030111", "bankMasked": "— none on file —", "recaptured": true, "employer": "Ministry Of Industry", "officer": "ABDULLAHI, Mustapha Umar", "officerEmail": "maumar@premiumpension.com", "officerPhone": "07012016532", "nok": null, "email": "fellowcolins@yahoo.com", "phone": "08058969521", "dob6": "300579", "recaptureStatus": "Recapture Successful", "designation": "SNR. EXE.", "age": 46, "exit": null, "bankName": null, "accountName": null, "branch": "Garki", "employerType": "ST", "employerState": "Fct Abuja", "employerCode": "PU000037A001", "classPay": null, "classRet": "C", "dateEmployed": "24 Jul 2002", "dateRetired": null}, {"name": "Umaru Kwadon Saleh", "first": "Umaru", "pin": "PEN100000030206", "bankMasked": "••••4082 (United Bank for Africa)", "recaptured": true, "employer": "National Identity Management Commission", "officer": "BABA, Abubakar Ajiya", "officerEmail": "abajiya@premiumpension.com", "officerPhone": "07012016529", "nok": null, "email": null, "phone": "08137713698", "dob6": "101055", "recaptureStatus": "Recapture Successful", "designation": "Contributor", "age": 70, "exit": "R", "bankName": "United Bank for Africa", "accountName": "Umaru Kwadon Saleh", "branch": "Wuse", "employerType": "PU", "employerState": "Fct Abuja", "employerCode": "PU000039A006", "classPay": "MONTHLY PENSION", "classRet": "R", "dateEmployed": "15 Aug 2012", "dateRetired": "31 Jul 2012"}, {"name": "Emeindou Patrick Mounkeregha", "first": "Emeindou", "pin": "PEN100000030311", "bankMasked": "— none on file —", "recaptured": false, "employer": "National Primary Health Care Development Agency", "officer": "ABDULLAHI, Mustapha Umar", "officerEmail": "maumar@premiumpension.com", "officerPhone": "07012016532", "nok": null, "email": null, "phone": "08034535968", "dob6": "090772", "recaptureStatus": "Not Recaptured", "designation": "Contributor", "age": 53, "exit": null, "bankName": null, "accountName": null, "branch": "Wuse", "employerType": "PU", "employerState": "Garki", "employerCode": "PU000036F003", "classPay": null, "classRet": "C", "dateEmployed": "24 Jul 2002", "dateRetired": null}, {"name": "Chukwuka Mbam Nwokpor", "first": "Chukwuka", "pin": "PEN100000030408", "bankMasked": "— none on file —", "recaptured": true, "employer": "National Identity Management Commission", "officer": "BABA, Abubakar Ajiya", "officerEmail": "abajiya@premiumpension.com", "officerPhone": "07012016529", "nok": "Abiodun Ojo", "email": "chuzzyforoge@gmail.com", "phone": "07035962004", "dob6": "281280", "recaptureStatus": "Recapture Successful", "designation": "Contributor", "age": 45, "exit": null, "bankName": null, "accountName": null, "branch": "Wuse", "employerType": "PU", "employerState": "Fct Abuja", "employerCode": "PU000039A006", "classPay": null, "classRet": "C", "dateEmployed": "24 Jul 2002", "dateRetired": null}, {"name": "Hadizza Bello Dau", "first": "Hadizza", "pin": "PEN100000030661", "bankMasked": "— none on file —", "recaptured": false, "employer": "D N C R", "officer": "BABA, Abubakar Ajiya", "officerEmail": "abajiya@premiumpension.com", "officerPhone": "07012016529", "nok": null, "email": null, "phone": null, "dob6": "091272", "recaptureStatus": "Not Recaptured", "designation": "Eo", "age": 53, "exit": null, "bankName": null, "accountName": null, "branch": "Wuse", "employerType": "PU", "employerState": "Fct Abuja", "employerCode": "PU000039A003", "classPay": null, "classRet": "C", "dateEmployed": "30 Dec 2005", "dateRetired": null}, {"name": "Tairu Salami", "first": "Tairu", "pin": "PEN100000030992", "bankMasked": "— none on file —", "recaptured": false, "employer": "D N C R", "officer": "BABA, Abubakar Ajiya", "officerEmail": "abajiya@premiumpension.com", "officerPhone": "07012016529", "nok": null, "email": null, "phone": "008055837141", "dob6": "180178", "recaptureStatus": "Not Recaptured", "designation": "Contributor", "age": 47, "exit": null, "bankName": null, "accountName": null, "branch": "Wuse", "employerType": "PU", "employerState": "Fct Abuja", "employerCode": "PU000039A003", "classPay": null, "classRet": "R", "dateEmployed": "18 Jan 1978", "dateRetired": null}, {"name": "Yohana Jonas Lema", "first": "Yohana", "pin": "PEN100000031005", "bankMasked": "••••6293 (Access Bank Plc)", "recaptured": false, "employer": "D N C R", "officer": "BABA, Abubakar Ajiya", "officerEmail": "abajiya@premiumpension.com", "officerPhone": "07012016529", "nok": null, "email": null, "phone": "08057190301", "dob6": "311256", "recaptureStatus": "Not Recaptured", "designation": "Contributor", "age": 69, "exit": "R", "bankName": "Access Bank Plc", "accountName": "Yohana Jonas Lema", "branch": "Wuse", "employerType": "PU", "employerState": "Fct Abuja", "employerCode": "PU000039A003", "classPay": "MONTHLY PENSION", "classRet": "R", "dateEmployed": "15 Jul 1988", "dateRetired": "31 Dec 2006"}, {"name": "Nura Nuradeen Isah", "first": "Nura", "pin": "PEN100000031131", "bankMasked": "— none on file —", "recaptured": false, "employer": "D N C R", "officer": "BABA, Abubakar Ajiya", "officerEmail": "abajiya@premiumpension.com", "officerPhone": "07012016529", "nok": null, "email": null, "phone": null, "dob6": "070376", "recaptureStatus": "Not Recaptured", "designation": "Contributor", "age": 49, "exit": null, "bankName": null, "accountName": null, "branch": "Wuse", "employerType": "PU", "employerState": "Fct Abuja", "employerCode": "PU000039A003", "classPay": null, "classRet": "C", "dateEmployed": "24 Jul 2002", "dateRetired": null}, {"name": "Paul Enang Usang", "first": "Paul", "pin": "PEN100000031311", "bankMasked": "••••9856 (Access Bank Plc)", "recaptured": false, "employer": "D N C R", "officer": "BABA, Abubakar Ajiya", "officerEmail": "abajiya@premiumpension.com", "officerPhone": "07012016529", "nok": null, "email": null, "phone": "08091475761", "dob6": "030862", "recaptureStatus": "Not Recaptured", "designation": "Contributor", "age": 63, "exit": "D", "bankName": "Access Bank Plc", "accountName": "Usang Jerry Enang", "branch": "Wuse", "employerType": "PU", "employerState": "Fct Abuja", "employerCode": "PU000039A003", "classPay": null, "classRet": "C", "dateEmployed": "01 Feb 1990", "dateRetired": "29 Apr 2019"}, {"name": "Kolawole Ige", "first": "Kolawole", "pin": "PEN100000031401", "bankMasked": "— none on file —", "recaptured": false, "employer": "Ministry Of Interior", "officer": "ABDULLAHI, Mustapha Umar", "officerEmail": "maumar@premiumpension.com", "officerPhone": "07012016532", "nok": "Akinlolu Dairo", "email": null, "phone": "08054158063", "dob6": "260755", "recaptureStatus": "Not Recaptured", "designation": "Contributor", "age": 70, "exit": null, "bankName": null, "accountName": null, "branch": "Garki", "employerType": "PU", "employerState": "Fct Abuja", "employerCode": "PU000039A005", "classPay": null, "classRet": "C", "dateEmployed": "17 Nov 1986", "dateRetired": null}, {"name": "Joshua Timothy David", "first": "Joshua", "pin": "PEN100000031552", "bankMasked": "— none on file —", "recaptured": false, "employer": "D N C R", "officer": "BABA, Abubakar Ajiya", "officerEmail": "abajiya@premiumpension.com", "officerPhone": "07012016529", "nok": null, "email": "soedautim@yahoo.com", "phone": "08061523540", "dob6": "051079", "recaptureStatus": "Not Recaptured", "designation": "Contributor", "age": 46, "exit": null, "bankName": null, "accountName": null, "branch": "Wuse", "employerType": "PU", "employerState": "Fct Abuja", "employerCode": "PU000039A003", "classPay": null, "classRet": "C", "dateEmployed": "18 Feb 1990", "dateRetired": null}, {"name": "Joseph Akintobi", "first": "Joseph", "pin": "PEN100000031672", "bankMasked": "— none on file —", "recaptured": false, "employer": "D N C R", "officer": "BABA, Abubakar Ajiya", "officerEmail": "abajiya@premiumpension.com", "officerPhone": "07012016529", "nok": null, "email": null, "phone": null, "dob6": "301250", "recaptureStatus": "Not Recaptured", "designation": "Contributor", "age": 75, "exit": null, "bankName": null, "accountName": null, "branch": "Wuse", "employerType": "PU", "employerState": "Fct Abuja", "employerCode": "PU000039A003", "classPay": null, "classRet": "C", "dateEmployed": "30 Dec 1980", "dateRetired": null}];
+const FIELDS = ["Surname", "First name", "Other names", "PIN", "Member Phone", "Data Recapture Status", "25% WITHDRAWAL", "Account Name", "Account Officer", "Account Officer Email", "Account Officer Phone", "PERMANENT_ADDRESS", "Address1: City", "Address1: Country", "Age", "Agent", "Bank Account Number", "Bank Name", "PAYMENT_DATE", "Birthday", "Branch", "Current Balance", "Nin", "BVN", "CITY", "Class of Payment", "Class of Retirement", "Data Recapture Status", "Date Confirmed", "Date Employed", "Date of Birth1", "Date of First Appointment", "DATE_RETIRED", "DESIGNATION", "EMAIL", "EMPLOYER_ADDRESS", "EMPLOYER_CITY", "Employer Code", "EMPLOYER_NAME", "Employer State", "EMPLOYER_TYPE", "Exit Type", "Accrued Rights", "Nok Name", "Form Ref Number"];
+const RECORDS = [["ISINKAYE", "OLANREWAJU", "MAYOWA", "PEN000000023850", "08023249075", "0", null, null, "BABA, ABUBAKAR AJIYA", "abajiya@premiumpension.com", "7012016529", "PLT B149  KUBWA 1234", "FCT ABUJA", null, "51", "BABA, ABUBAKAR AJIYA", null, null, null, "18 Jan 1974", "WUSE", "2000000", "12345678901", null, "FCT ABUJA", null, "C", "Not Recaptured", null, "24 Jul 2002", "18 Jan 1974", "24 Jul 2002", null, "COMPT OPTR", "SINKAYLAR@YAHOO.COM", "D N C R", "FCT ABUJA", "PU000039A003", "D N C R", "FCT ABUJA", "PU", null, null, "Seun Modupe", "PEN000000023850"], ["OMONALE", "STEVEN", "SUNDAY", "PEN100000021500", "08055241799", "YES", null, "OMONALE STEVEN SUNDAY", "BABA, ABUBAKAR AJIYA", "abajiya@premiumpension.com", "7012016529", "PLT B149  KUBWA 1235", null, null, "57", "BABA, ABUBAKAR AJIYA", "238352985", "Guaranty Trust Bank Plc", "25 Mar 2025", "14 Feb 1968", "ASOKORO", "3000000", "12345678902", null, null, "ENBLOC", "E", "Recapture Successful", null, "15 Jul 1988", "14 Feb 1968", "15 Jul 1988", "15 Jul 2023", "SCO", "sunday.nale@gmail.com", "D N C R", null, "PU000039A006", "NATIONAL IDENTITY MANAGEMENT COMMISSION", null, "PU", "E", "1604000", null, "97579"], ["ODIONG", "SYLVESTER", "ISOYIP", "PEN100000021661", "08050285001", "YES", null, "ODIONG SYLVESTER ISOYIP", "WAIDI, YUSUF", "wyusuf@premiumpension.com", "8126131295", "PLT B149  KUBWA 1236", "FCT ABUJA", null, "62", "WAIDI, YUSUF", "2762028271", "Ecobank", "02 Feb 2023", "01 Jul 1963", "CENTRAL BUSINESS DISTRCT", "2323000", "12345678903", null, "FCT ABUJA", "ANNUITY", "R", "Recapture Successful", null, "03 Dec 1986", "01 Jul 1963", "03 Dec 1986", "03 Dec 2021", "EXECUTIVE OFFICER", null, "FED MIN OF WOMEN AFFAIRS", "FCT ABUJA", "PU000024A001", "MINISTRY OF WOMEN AFFAIRS", "FCT ABUJA", "PU", "R", "6276127.07", null, "478683"], ["ISINKAYE", "OLANREWAJU", "MAYOWA", "PEN100000023862", "07039893913", "YES", null, null, "BABA, ABUBAKAR AJIYA", "abajiya@premiumpension.com", "7012016529", "PLT B149  KUBWA 1237", "FCT ABUJA", null, "51", "BABA, ABUBAKAR AJIYA", null, null, null, "18 Jan 1974", "WUSE", "1646000", "12345678904", null, "FCT ABUJA", null, "C", "Recapture Successful", null, "24 Jul 2002", "18 Jan 1974", null, null, null, "lanresinkay@gmail.com", "NATIONAL IDENTITY MANAGEMENT COMMISSION", "FCT ABUJA", "PU000039A006", "NATIONAL IDENTITY MANAGEMENT COMMISSION", "FCT ABUJA", "PU", null, null, null, "655281"], ["AKAEME", "CLEMENT", "CHUKWUDOLUO", "PEN100000024111", "08030927093", "YES", null, "AKAEME CLEMENT CHUKWUDOLUO", "VICTORIA BATURE", "vbature@premiumpension.com", "7080007585", "PLT B149  KUBWA 1238", "FCT ABUJA", null, "69", "VICTORIA BATURE", "6017342828", "Fidelity Bank Plc", "21 May 2019", "12 Dec 1956", "CENTRAL BUSINESS DISTRCT", "969000", "12345678905", null, "FCT ABUJA", "ANNUITY", "N", "Not Recaptured", null, "03 Dec 2018", "12 Dec 1956", null, null, "STAFF", "akaemeclem@yahoo.com*", "OFFICE OF THE SECRETARY TO THE STATE GOV", "FCT ABUJA", "STKDPAR00045", "OFFICE OF THE SECRETARY TO THE STATE GOV", "FCT ABUJA", "ST", "N", null, null, "509005"], ["MBAM", "BONIFACE", "JOSEPH", "PEN100000024200", "08057050986", "0", null, null, "BABA, ABUBAKAR AJIYA", "abajiya@premiumpension.com", "7012016529", "PLT B149  KUBWA 1239", "FCT ABUJA", null, "43", "BABA, ABUBAKAR AJIYA", null, null, null, "27 Sep 1982", "WUSE", "22200998", "12345678906", null, "FCT ABUJA", null, "C", "Not Recaptured", null, "15 May 2003", "27 Sep 1982", "15 May 2003", null, "COMPTER OPERATO", "beacem4u@yahoo.co.uk", "D N C R", "FCT ABUJA", "PU000039A003", "D N C R", "FCT ABUJA", "PU", null, null, "Kemi Anne", "PEN100000024200"], ["AHMED", "MOHAMMED", "AL-SUKUN", "PEN100000024331", "00", "0", null, null, "BOLARINWA, OPEYEMI FUAD", "ofbolarinwa@premiumpension.com", "9022271452", "PLT B149  KUBWA 1240", null, null, "51", "BOLARINWA, OPEYEMI FUAD", null, null, null, "25 Dec 1974", "IKOYI", "3234344", "12345678907", null, null, null, "C", "Not Recaptured", null, "28 Apr 2016", "25 Dec 1974", "29 Jul 2002", null, null, "ahmedal_sukun@yahoo.com", "THE PRESIDENCY", null, "PUPRESIDENCY", "THE PRESIDENCY", null, "PU", null, null, null, "655313"], ["AGERL", "CHARLES", "IORPENDA", "PEN100000024412", "08025663000", "YES", null, "AGERL CHARLES IORPENDA", "VICTORIA BATURE", "vbature@premiumpension.com", "7080007585", "PLT B149  KUBWA 1241", "FCT ABUJA", null, "63", "VICTORIA BATURE", "2007030860", "First Bank of Nigeria Plc", "26 May 2023", "08 Jan 1962", "CENTRAL BUSINESS DISTRCT", "232323", "12345678908", null, "FCT ABUJA", "ANNUITY", "R", "Recapture Successful", null, "14 Dec 1983", "08 Jan 1962", "14 Dec 1983", "14 Dec 2018", "HSO", "charlesagerl@gmail.com", "NATIONAL POVERTY ERADICATION PROGRAMME", "FCT ABUJA", "PU000020F017", "NATIONAL POVERTY ERADICATION PROGRAMME", "FCT ABUJA", "PU", "R", "4622000", null, "PEN100000024412"], ["CHINGYIN", "JINASON", "KWASHI", "PEN100000029913", "08036175238", "YES", null, null, "WAIDI, YUSUF", "wyusuf@premiumpension.com", "8126131295", "PLT B149  KUBWA 1242", "FCT ABUJA", null, "68", "WAIDI, YUSUF", null, null, null, "20 Feb 1957", "CENTRAL BUSINESS DISTRCT", "4244244", "12345678909", null, "FCT ABUJA", null, "C", "Not Recaptured", "28 Mar 2007", "07 Nov 2017", "20 Feb 1957", "01 Aug 1981", null, null, "jiireetkwashi@yahoo.com*", "MINISTRY OF FINANCE", "FCT ABUJA", "PU000035A001", "MINISTRY OF FINANCE", "FCT ABUJA", "PU", null, null, null, null], ["AREMU", "ALABA", "ABIODUN", "PEN100000030004", "08137097141", "YES", null, null, "BABA, ABUBAKAR AJIYA", "abajiya@premiumpension.com", "7012016529", "PLT B149  KUBWA 1243", "FCT ABUJA", null, "71", "BABA, ABUBAKAR AJIYA", null, null, null, "01 Jan 1954", "WUSE", "2432223", "12345678910", null, "FCT ABUJA", null, "C", "Not Recaptured", "28 Mar 2007", "15 Aug 2012", "01 Jan 1954", "09 Jul 1987", null, null, null, "D N C R", "FCT ABUJA", "PU000039A003", "D N C R", "FCT ABUJA", "PU", null, null, null, null], ["OKORONKWO", "IFEANYICHUKWU", "COLLINS", "PEN100000030111", "08058969521", "YES", null, null, "ABDULLAHI, MUSTAPHA UMAR", "maumar@premiumpension.com", "7012016532", "PLT B149  KUBWA 1244", "FCT ABUJA", null, "46", "ABDULLAHI, MUSTAPHA UMAR", null, null, null, "30 May 1979", "GARKI", "212112", "12345678911", null, "FCT ABUJA", null, "C", "Recapture Successful", "24 Jul 2004", "24 Jul 2002", "30 May 1979", "24 Jul 2002", null, "SNR. EXE.", "fellowcolins@yahoo.com", "MINISTRY OF INFORMATION", "FCT ABUJA", "PU000037A001", "MINISTRY OF INDUSTRY", "FCT ABUJA", "ST", null, null, null, "51831"], ["SALEH", "UMARU", "KWADON", "PEN100000030206", "08137713698", "YES", null, "UMARU KWADON SALEH", "BABA, ABUBAKAR AJIYA", "abajiya@premiumpension.com", "7012016529", "PLT B149  KUBWA 1245", "FCT ABUJA", null, "70", "BABA, ABUBAKAR AJIYA", "1002894082", "United Bank for Africa", "19 Sep 2025", "10 Oct 1955", "WUSE", "342222", "12345678912", null, "FCT ABUJA", "MONTHLY PENSION", "R", "Recapture Successful", "28 Mar 2007", "15 Aug 2012", "10 Oct 1955", "24 Jul 2002", "31 Jul 2012", null, null, "D N C R", "FCT ABUJA", "PU000039A006", "NATIONAL IDENTITY MANAGEMENT COMMISSION", "FCT ABUJA", "PU", "R", "117000", null, "51832"], ["MOUNKEREGHA", "EMEINDOU", "PATRICK", "PEN100000030311", "08034535968", "0", null, null, "ABDULLAHI, MUSTAPHA UMAR", "maumar@premiumpension.com", "7012016532", "PLT B149  KUBWA 1246", "FCT ABUJA", null, "53", "ABDULLAHI, MUSTAPHA UMAR", null, null, null, "09 Jul 1972", "WUSE", "42424422", "12345678913", null, "FCT ABUJA", null, "C", "Not Recaptured", "28 Mar 2007", "24 Jul 2002", "09 Jul 1972", "24 Jul 2002", null, null, null, "681/682 PORT HARCOURT CRESCENT", "GARKI", "PU000036F003", "NATIONAL PRIMARY HEALTH CARE DEVELOPMENT AGENCY", "GARKI", "PU", null, null, null, "51833"], ["NWOKPOR", "CHUKWUKA", "MBAM", "PEN100000030408", "07035962004", "YES", null, null, "BABA, ABUBAKAR AJIYA", "abajiya@premiumpension.com", "7012016529", "PLT B149  KUBWA 1247", "FCT ABUJA", null, "45", "BABA, ABUBAKAR AJIYA", null, null, null, "28 Dec 1980", "WUSE", "33444443", "12345678914", null, "FCT ABUJA", null, "C", "Recapture Successful", "28 Mar 2007", "24 Jul 2002", "28 Dec 1980", null, null, null, "CHUZZYFOROGE@GMAIL.COM", "NATIONAL IDENTITY MANAGEMENT COMMISSION", "FCT ABUJA", "PU000039A006", "NATIONAL IDENTITY MANAGEMENT COMMISSION", "FCT ABUJA", "PU", null, null, "Abiodun Ojo", "51834"], ["DAU", "HADIZZA", "BELLO", "PEN100000030661", "00", "0", null, null, "BABA, ABUBAKAR AJIYA", "abajiya@premiumpension.com", "7012016529", "PLT B149  KUBWA 1248", "FCT ABUJA", null, "53", "BABA, ABUBAKAR AJIYA", null, null, null, "09 Dec 1972", "WUSE", "6565655", "12345678915", null, "FCT ABUJA", null, "C", "Not Recaptured", null, "30 Dec 2005", "09 Dec 1972", "30 Dec 2005", null, "EO", null, "D N C R", "FCT ABUJA", "PU000039A003", "D N C R", "FCT ABUJA", "PU", null, null, null, "97590"], ["SALAMI", "TAIRU", null, "PEN100000030992", "008055837141*", "0", null, null, "BABA, ABUBAKAR AJIYA", "abajiya@premiumpension.com", "7012016529", "PLT B149  KUBWA 1249", "FCT ABUJA", null, "47", "BABA, ABUBAKAR AJIYA", null, null, null, "18 Jan 1978", "WUSE", "79779888", "12345678916", null, "FCT ABUJA", null, "R", "Not Recaptured", "28 Mar 2007", "18 Jan 1978", "18 Jan 1978", "18 Jan 1978", null, null, null, "D N C R", "FCT ABUJA", "PU000039A003", "D N C R", "FCT ABUJA", "PU", null, null, null, null], ["LEMA", "YOHANA", "JONAS", "PEN100000031005", "08057190301", "0", null, "YOHANA JONAS LEMA", "BABA, ABUBAKAR AJIYA", "abajiya@premiumpension.com", "7012016529", "PLT B149  KUBWA 1250", "FCT ABUJA", null, "69", "BABA, ABUBAKAR AJIYA", "22916293", "Access Bank Plc", "19 Sep 2025", "31 Dec 1956", "WUSE", "234324", "12345678917", null, "FCT ABUJA", "MONTHLY PENSION", "R", "Not Recaptured", "28 Mar 2007", "15 Jul 1988", "31 Dec 1956", "15 Jul 1988", "31 Dec 2006", null, null, "D N C R", "FCT ABUJA", "PU000039A003", "D N C R", "FCT ABUJA", "PU", "R", null, null, null], ["ISAH", "NURA", "NURADEEN", "PEN100000031131", "00", "0", null, null, "BABA, ABUBAKAR AJIYA", "abajiya@premiumpension.com", "7012016529", "PLT B149  KUBWA 1251", "FCT ABUJA", null, "49", "BABA, ABUBAKAR AJIYA", null, null, null, "07 Mar 1976", "WUSE", "466464", "12345678918", null, "FCT ABUJA", null, "C", "Not Recaptured", "28 Mar 2007", "24 Jul 2002", "07 Mar 1976", "24 Jul 2002", null, null, null, "D N C R", "FCT ABUJA", "PU000039A003", "D N C R", "FCT ABUJA", "PU", null, null, null, "51837"], ["USANG", "PAUL", "ENANG", "PEN100000031311", "08091475761", "0", null, "USANG JERRY ENANG", "BABA, ABUBAKAR AJIYA", "abajiya@premiumpension.com", "7012016529", "PLT B149  KUBWA 1252", "FCT ABUJA", null, "63", "BABA, ABUBAKAR AJIYA", "6018609856", "Access Bank Plc", null, "03 Aug 1962", "WUSE", "67688", "12345678919", null, "FCT ABUJA", null, "C", "Not Recaptured", "28 Mar 2007", "01 Feb 1990", "03 Aug 1962", "01 Feb 1990", "29 Apr 2019", null, null, "D N C R", "FCT ABUJA", "PU000039A003", "D N C R", "FCT ABUJA", "PU", "D", null, null, "51838"], ["IGE", "KOLAWOLE", null, "PEN100000031401", "08054158063", "YES", null, null, "ABDULLAHI, MUSTAPHA UMAR", "maumar@premiumpension.com", "7012016532", "PLT B149  KUBWA 1253", "FCT ABUJA", null, "70", "ABDULLAHI, MUSTAPHA UMAR", null, null, null, "26 Jul 1955", "GARKI", "54554646", "12345678920", null, "FCT ABUJA", null, "C", "Not Recaptured", "28 Mar 2007", "17 Nov 1986", "26 Jul 1955", "17 Nov 1986", null, null, null, "MINISTRY OF INTERIOR", "FCT ABUJA", "PU000039A005", "MINISTRY OF INTERIOR", "FCT ABUJA", "PU", null, null, "Akinlolu Dairo", null], ["DAVID", "JOSHUA", "TIMOTHY", "PEN100000031552", "08061523540", "0", null, null, "BABA, ABUBAKAR AJIYA", "abajiya@premiumpension.com", "7012016529", "PLT B149  KUBWA 1254", "FCT ABUJA", null, "46", "BABA, ABUBAKAR AJIYA", null, null, null, "05 Oct 1979", "WUSE", "7577575", "12345678921", null, "FCT ABUJA", null, "C", "Not Recaptured", "28 Mar 2007", "18 Feb 1990", "05 Oct 1979", "18 Feb 1990", null, null, "soedautim@yahoo.com", "D N C R", "FCT ABUJA", "PU000039A003", "D N C R", "FCT ABUJA", "PU", null, null, null, "51840"], ["AKINTOBI", "JOSEPH", null, "PEN100000031672", "00", "0", null, null, "BABA, ABUBAKAR AJIYA", "abajiya@premiumpension.com", "7012016529", "GWAGWALAPE VILLAGE", "FCT ABUJA", null, "75", "BABA, ABUBAKAR AJIYA", null, null, null, "30 Dec 1950", "WUSE", "575757", "12345678922", null, "FCT ABUJA", null, "C", "Not Recaptured", "28 Mar 2007", "30 Dec 1980", "30 Dec 1950", "30 Dec 1980", null, null, null, "D N C R", "FCT ABUJA", "PU000039A003", "D N C R", "FCT ABUJA", "PU", null, null, null, "51841"]];
+/* ============ DATA ============ */
+const ROLES = {
+  contributor:{name:ME.name,label:"Contributor",sub:"RSA holder",
+    nav:[["dashboard","My dashboard"],["myclaims","My claims"],["updatedata","Update my data"],["feedback","UAT feedback"]]},
+  officer:{name:"Ibrahim Bello",label:"Operations Officer",sub:"Operations",
+    nav:[["dashboard","Dashboard"],["claims","Benefit claims"],["remittance","Remittance validation"],["approvals","Data approvals"],["records","Full records"],["feedback","UAT feedback"]]},
+  compliance:{name:"Ngozi Eze",label:"Compliance Officer",sub:"Compliance",
+    nav:[["dashboard","Dashboard"],["audit","Audit trail"],["reports","Compliance reports"],["feedback","UAT feedback"]]},
+  admin:{name:"System Administrator",label:"Administrator",sub:"Full access",
+    nav:[["dashboard","Dashboard"],["claims","Benefit claims"],["remittance","Remittance validation"],["approvals","Contributor data"],["records","Full records"],["audit","Audit trail"],["reports","Compliance reports"],["feedback","UAT feedback"]]},
+};
+/* username -> role for staff personas; password is "Pwap" for every sign-in */
+const STAFF = {ibrahim:"officer", ngozi:"compliance", admin:"admin", system:"admin"};
+const PW = "Pwap";
+
+const STG = {
+  base:["Submitted","Identity verification","Document completeness","Departmental review","Payment authorisation","Completed"],
+  accrued:["Submitted","Identity verification","Document completeness","Accrued rights (COBRA)","Departmental review","Payment authorisation","Completed"],
+  death:["Submitted","Identity verification","Document completeness","Beneficiary verification","Departmental review","Payment authorisation","Completed"],
+};
+const SLA = {"Identity verification":1,"Document completeness":0.5,"Accrued rights (COBRA)":3,"Beneficiary verification":1,"Departmental review":1,"Payment authorisation":0.5};
+
+let state = { role:"admin", view:"dashboard", claims:SEED.claims, remit:SEED.remit, approvals:SEED.approvals, audit:SEED.audit, notices:[] };
+
+function mins(m){const d=new Date(Date.now()-m*60000);return d;}
+function fmtT(d){return d.toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});}
+function naira(n){return "₦"+n.toLocaleString('en-NG');}
+function recapBadge(s){s=s||'Unknown';const ok=/success/i.test(s);const bad=/not/i.test(s);
+  const cls=ok?'b-ok':bad?'b-warn':'b-mut';
+  return `<span class="badge ${cls}"><span class="b-dot"></span>${esc(s)}</span>`;}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function curStage(c){return c.stages[c.idx];}
+function isOverdue(c){const s=curStage(c);return !c.done && SLA[s]!=null && c.elapsed>SLA[s];}
+
+/* ---- pseudonymisation (surnames only) ---- */
+let PSEUDO = true;
+const PSEUDO_POOL = ["Adeyemi","Okafor","Bello","Danjuma","Eze","Ogunleye","Musa","Chukwu","Balogun","Sani","Nwosu","Aliyu","Okonkwo","Adebayo","Lawal","Obi","Umar","Effiong","Garba","Suleiman","Ojo","Bassey","Kalu","Abubakar","Idris","Ezenwa","Akande","Ade","Nnaji","Uche"];
+const _pmap = {};
+(typeof REAL_SURNAMES!=='undefined'?REAL_SURNAMES:[]).slice().sort().forEach((s,i)=>{_pmap[String(s).toLowerCase()]=PSEUDO_POOL[i%PSEUDO_POOL.length];});
+function nm(full){
+  if(!PSEUDO||!full) return full;
+  const parts=String(full).split(' ');
+  const rep=_pmap[parts[parts.length-1].toLowerCase()];
+  if(rep) parts[parts.length-1]=rep;
+  return parts.join(' ');
+}
+function togglePseudo(){PSEUDO=!PSEUDO;renderShell();toast(PSEUDO?'Surnames pseudonymised':'Real surnames shown');}
+
+/* ---- contributor portal notifications ---- */
+function myNotices(){return (state.notices||[]).filter(n=>n.to===ME.name && !n.read);}
+function noticeBanner(){
+  const ns=myNotices(); if(!ns.length) return '';
+  return ns.map(n=>{const cls=n.kind==='ok'?'ok':n.kind==='bad'?'warn':'info';const idx=state.notices.indexOf(n);
+    return `<div class="notice ${cls}" style="margin-bottom:14px">${ICO.dot}
+      <div style="flex:1">${esc(n.text)}<div class="small muted" style="margin-top:3px">${fmtT(n.ts)}</div></div>
+      <button class="btn sm" onclick="dismissNotice(${idx})">Dismiss</button></div>`;}).join('');
+}
+function dismissNotice(i){if(state.notices[i])state.notices[i].read=true;render();}
+
+/* ============ AUDIT / TOAST ============ */
+function audit(act,det,extra){state.audit.unshift(Object.assign({t:new Date(),who:ROLES[state.role].name,act,det},extra||{}));}
+function toast(msg){const w=document.getElementById('toast');const e=document.createElement('div');e.className='t';e.innerHTML='✓ '+esc(msg);w.appendChild(e);setTimeout(()=>e.remove(),3200);}
+
+/* ============ SHELL ============ */
+function initLogin(){
+  const ex = (typeof ME!=='undefined') ? (ME.pin+'  /  '+pwFor(ME)) : '';
+  document.getElementById('credHint').innerHTML =
+    '<b>Staff</b> — username <code>ibrahim</code> · <code>ngozi</code> · <code>admin</code>, password <code>Pwap</code>.<br>'+
+    '<b>Contributors</b> — username = RSA PIN or phone; password = date of birth <code>DDMMYY</code>.<br>'+
+    'Example: <code>'+esc(ex)+'</code>';
+}
+function pwFor(p){ return String(p.dob6||''); }
+function clrErr(){document.getElementById('pwrap').classList.remove('bad');}
+function doLogin(){
+  const raw=(document.getElementById('u').value||'').trim();
+  const u=raw.toLowerCase();
+  const p=document.getElementById('pw').value||'';
+  if(STAFF[u]){ if(p!==PW) return failLogin(); return login(STAFF[u]); }
+  const dir=(typeof PEOPLE!=='undefined'?PEOPLE:[]);
+  // by RSA PIN (unique)
+  let person=dir.find(x=>String(x.pin).toLowerCase()===u);
+  if(person){ return p===pwFor(person) ? login('contributor',person) : failLogin(); }
+  // by phone — may be shared, so match the password to pick the right record
+  const digits=raw.replace(/\D/g,'');
+  if(digits){
+    const cands=dir.filter(x=>String(x.phone||'').replace(/\D/g,'')===digits);
+    const match=cands.find(x=>pwFor(x)===p);
+    if(match) return login('contributor',match);
+    if(cands.length) return failLogin();
+  }
+  failLogin();
+}
+function failLogin(){document.getElementById('pwrap').classList.add('bad');document.getElementById('pw').focus();}
+function failLogin(){document.getElementById('pwrap').classList.add('bad');document.getElementById('pw').focus();}
+function login(role,person){
+  state.role=role; state.authRole=role; state.view='dashboard';
+  if(role==='contributor'&&person){ME=Object.assign({},person);}
+  if(role==='contributor'){ROLES.contributor.name=ME.name;}
+  document.getElementById('login').style.display='none';
+  document.getElementById('app').classList.add('show');
+  const sel=document.getElementById('roleSel');
+  sel.innerHTML=Object.entries(ROLES).map(([k,r])=>`<option value="${k}">${r.label}</option>`).join('');
+  sel.value=role; renderShell();
+}
+function logout(){document.getElementById('app').classList.remove('show');document.getElementById('login').style.display='grid';}
+function switchRole(r){if(state.authRole==='contributor')return;state.role=r;state.view='dashboard';renderShell();toast('Now viewing as '+ROLES[r].label);}
+function go(v){state.view=v;renderShell();}
+
+function renderShell(){
+  const r=ROLES[state.role];
+  document.getElementById('whoami').textContent=nm(r.name);
+  {const pl=document.getElementById('pseudoLbl');if(pl)pl.textContent='Names: '+(PSEUDO?'pseudonymised':'real');}
+  document.getElementById('sideSub').textContent=r.label;
+  document.getElementById('crumbRole').textContent=r.label;
+  {const rs=document.getElementById('roleSwitch');if(rs)rs.style.display=(state.authRole==='contributor')?'none':'';}
+  // nav
+  document.getElementById('nav').innerHTML=`<div class="nav-label">Modules</div>`+
+    r.nav.map(([v,l])=>`<button class="nav-item ${state.view===v?'active':''}" onclick="go('${v}')">
+      <span class="nav-ico">${ICO[v]||ICO.dot}</span>${l}</button>`).join('');
+  render();
+}
+
+const ICO={
+  dashboard:svg('M3 13h8V3H3zM13 21h8v-6h-8zM13 11h8V3h-8zM3 21h8v-6H3z'),
+  claims:svg('M8 3h8l3 4v14H5V3zM8 8h8M8 12h8M8 16h5'),
+  myclaims:svg('M8 3h8l3 4v14H5V3zM8 8h8M8 12h8M8 16h5'),
+  remittance:svg('M3 7h18v12H3zM3 11h18M7 15h4'),
+  approvals:svg('M20 6L9 17l-5-5'),
+  updatedata:svg('M12 20h9M16 3l4 4L8 19l-4 1 1-4z'),
+  audit:svg('M9 3v18M4 7h5M4 12h5M4 17h5M14 8h6M14 13h6M14 18h4'),
+  reports:svg('M6 3h9l3 3v15H6zM9 12l2 2 4-4'),
+  feedback:svg('M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'),
+  records:svg('M3 5h18v4H3zM3 11h18v4H3zM3 17h18v2H3z'),
+  dot:svg('M12 12h.01')
+};
+function svg(p){return `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="${p}"/></svg>`;}
+
+/* ============ ROUTER ============ */
+const TITLES={dashboard:"Dashboard",myclaims:"My claims",updatedata:"Update my data",claims:"Benefit claims",remittance:"Remittance validation",approvals:"Contributor data",records:"Full records",audit:"Audit trail",reports:"Compliance reports",feedback:"UAT feedback",claim:"Claim detail"};
+function render(){
+  document.getElementById('viewTitle').textContent=TITLES[state.view]||"Dashboard";
+  const c=document.getElementById('content');
+  const map={dashboard:vDashboard,myclaims:vMyClaims,updatedata:vUpdateData,claims:vClaims,remittance:vRemittance,approvals:vApprovals,records:vRecords,audit:vAudit,reports:vReports,feedback:vFeedback,claim:vClaimDetail};
+  c.innerHTML=(map[state.view]||vDashboard)();
+}
+
+/* ============ VIEWS ============ */
+function kpi(label,val,note,cls,ico){return `<div class="card kpi"><div class="k-accent"></div>
+  <div class="k-l">${ico||''}${label}</div><div class="k-v">${val}</div><div class="k-n ${cls||''}">${note||''}</div></div>`;}
+
+function vDashboard(){
+  const inProg=state.claims.filter(c=>!c.done).length;
+  const escal=state.claims.filter(isOverdue).length;
+  const exc=state.remit.validated?state.remit.rows.filter(r=>r.flag&&r.status!=='resolved').length:3;
+  const pend=state.approvals.filter(a=>a.status==='pending').length;
+  if(state.role==='contributor') return contribDash();
+  const role=state.role;
+  let blocks='';
+  blocks+=`<div class="grid cards-4" style="margin-bottom:16px">
+    ${kpi('Claims in progress',inProg,'across all queues')}
+    ${kpi('Avg. processing time','2.4 <span style="font-size:15px">days</span>','▲ from 8–9 weeks manual','up')}
+    ${kpi('Open remittance exceptions',exc,exc?'awaiting resolution':'all clear',exc?'down':'up')}
+    ${kpi('SLA escalations',escal,escal?'live — needs action':'none active',escal?'down':'up')}</div>`;
+
+  blocks+=`<div class="grid cards-2" style="margin-bottom:16px">
+    <div class="card"><div class="card-h"><h3>Benefit-claim processing time</h3><span class="hint">illustrative pilot vs. manual baseline</span></div>
+      <div class="card-b">${barChart()}</div></div>
+    <div class="card"><div class="card-h"><h3>Claims by stage</h3><span class="hint">live</span></div>
+      <div class="card-b">${stageChart()}</div></div></div>`;
+
+  // work queue
+  const queue=state.claims.filter(c=>!c.done);
+  blocks+=`<div class="card"><div class="card-h"><h3>Work queue — ageing</h3><span class="hint">real-time task visibility</span></div>
+    <table><thead><tr><th>Claim</th><th>Contributor</th><th>Current stage</th><th>Time in stage</th><th>SLA</th><th></th></tr></thead><tbody>
+    ${queue.map(c=>{const od=isOverdue(c);return `<tr>
+      <td class="mono">${c.id}</td><td>${esc(nm(c.who))}</td><td>${esc(curStage(c))}</td>
+      <td class="num">${c.elapsed.toFixed(1)}d</td>
+      <td>${od?`<span class="badge b-bad"><span class="b-dot"></span>Escalated</span>`:`<span class="badge b-ok"><span class="b-dot"></span>On track</span>`}</td>
+      <td style="text-align:right"><button class="btn sm" onclick="openClaim('${c.id}')">Open</button></td></tr>`;}).join('')}
+    </tbody></table></div>`;
+  return blocks;
+}
+function contribDash(){
+  const mine=state.claims.filter(c=>c.who===ROLES.contributor.name);
+  let b=noticeBanner()+`<div class="notice info" style="margin-bottom:16px">${ICO.dot}<div>Welcome back, <b>${ME.first}</b>. You can track your benefit claims and request updates to your record. Changes are reviewed before they take effect.</div></div>`;
+  b+=`<div class="grid cards-3" style="margin-bottom:16px">
+    ${kpi('Active claims',mine.filter(c=>!c.done).length,'in progress')}
+    ${kpi('RSA PIN',ME.pin,'verified','')}
+    ${kpi('Record status',ME.recaptureStatus||'—',ME.recaptured?'record verified':'recapture required',ME.recaptured?'up':'down')}</div>`;
+  b+=`<div class="card" style="margin-bottom:16px"><div class="card-h"><h3>Employer &amp; servicing</h3><span class="hint">from contributor record</span></div><div class="card-b">
+    <div class="small" style="font-weight:700;color:var(--ink);margin-bottom:8px">Employer</div>
+    <dl class="kv" style="margin-bottom:16px">
+      <dt>Employer</dt><dd>${esc(ME.employer||'\u2014')}</dd>
+      <dt>Employer type</dt><dd>${esc(ME.employerType||'\u2014')}</dd>
+      <dt>Employer state</dt><dd>${esc(ME.employerState||'\u2014')}</dd>
+      <dt>Employer code</dt><dd class="mono">${esc(ME.employerCode||'\u2014')}</dd>
+      <dt>Designation</dt><dd>${esc(ME.designation||'\u2014')}</dd>
+      <dt>Date employed</dt><dd>${esc(ME.dateEmployed||'\u2014')}</dd>
+      <dt>Date retired</dt><dd>${esc(ME.dateRetired||'\u2014')}</dd>
+      <dt>Exit type</dt><dd>${esc(ME.exit||'\u2014')}</dd>
+      <dt>Class of payment</dt><dd>${esc(ME.classPay||'\u2014')}</dd>
+      <dt>Class of retirement</dt><dd>${esc(ME.classRet||'\u2014')}</dd>
+    </dl>
+    <div class="small" style="font-weight:700;color:var(--ink);margin-bottom:8px">Servicing &amp; contact</div>
+    <dl class="kv">
+      <dt>Account name</dt><dd>${esc(ME.accountName||'\u2014')}</dd>
+      <dt>Bank</dt><dd class="mono">${esc(ME.bankMasked||'\u2014')}</dd>
+      <dt>Email</dt><dd class="mono">${esc(ME.email||'\u2014')}</dd>
+      <dt>Phone</dt><dd class="mono">${esc(ME.phone||'\u2014')}</dd>
+      <dt>Data recapture</dt><dd>${recapBadge(ME.recaptureStatus)}</dd>
+      <dt>Account officer</dt><dd>${esc(ME.officer||'\u2014')}</dd>
+      <dt>Officer email</dt><dd class="mono">${esc(ME.officerEmail||'\u2014')}</dd>
+      <dt>Officer phone</dt><dd class="mono">${esc(ME.officerPhone||'\u2014')}</dd>
+      <dt>Next of kin</dt><dd>${ME.nok?esc(nm(ME.nok)):'<span class="badge b-warn"><span class="b-dot"></span>Not registered</span>'}</dd>
+    </dl></div></div>`;
+  b+=`<div class="card"><div class="card-h"><h3>Your claims</h3></div><div class="card-b stack">`;
+  b+= mine.length?mine.map(c=>claimStatusCard(c)).join(''):`<p class="muted">You have no claims on record.</p>`;
+  b+=`</div></div>`;
+  return b;
+}
+
+function vMyClaims(){
+  const mine=state.claims.filter(c=>c.who===ROLES.contributor.name);
+  return noticeBanner()+`<p class="section-sub">Track the real-time status of each benefit claim. This view is read-only.</p>
+    <div class="stack">${mine.map(c=>claimStatusCard(c)).join('')||'<p class="muted">No claims.</p>'}</div>`;
+}
+function claimStatusCard(c){
+  const od=isOverdue(c);
+  return `<div class="card p"><div class="row-between" style="margin-bottom:12px">
+    <div><span class="mono" style="font-weight:700">${c.id}</span> · ${esc(c.type)}</div>
+    ${c.done?`<span class="badge b-ok"><span class="b-dot"></span>Paid · ${c.days} days</span>`
+      :od?`<span class="badge b-bad"><span class="b-dot"></span>Delayed — escalated</span>`
+      :`<span class="badge b-info"><span class="b-dot"></span>${esc(curStage(c))}</span>`}</div>
+    ${tracker(c)}
+    <div class="small muted" style="margin-top:8px">${c.done?'Payment completed and confirmed.':'Target completion: '+ (SLA[curStage(c)]!=null?('within '+SLA[curStage(c)]+' business day(s) at this stage'):'—')+'.'}</div>
+  </div>`;
+}
+
+function vClaims(){
+  const rows=state.claims.map(c=>{const od=isOverdue(c);return `<tr>
+    <td class="mono">${c.id}</td><td>${esc(nm(c.who))}</td><td>${esc(c.type)}</td>
+    <td>${c.done?'Completed':esc(curStage(c))}</td>
+    <td>${c.done?`<span class="badge b-ok"><span class="b-dot"></span>Paid</span>`:od?`<span class="badge b-bad"><span class="b-dot"></span>Escalated</span>`:`<span class="badge b-info"><span class="b-dot"></span>In progress</span>`}</td>
+    <td style="text-align:right"><button class="btn sm" onclick="openClaim('${c.id}')">Open</button></td></tr>`;}).join('');
+  return `<p class="section-sub">Every claim is routed by the workflow engine. Stages exceeding their service-level target escalate automatically.</p>
+    <div class="card"><table><thead><tr><th>Claim</th><th>Contributor</th><th>Type</th><th>Stage</th><th>Status</th><th></th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
+let _openClaim=null;
+function openClaim(id){_openClaim=id;go('claim');}
+function vClaimDetail(){
+  const c=state.claims.find(x=>x.id===_openClaim); if(!c)return vClaims();
+  const od=isOverdue(c); const canAct=(state.role==='officer'||state.role==='admin');
+  const next=c.idx<c.stages.length-1?c.stages[c.idx+1]:null;
+  const isAuth=curStage(c)==='Payment authorisation';
+  let actions='';
+  if(canAct&&!c.done){
+    if(isAuth) actions=`<button class="btn gold" onclick="authorise('${c.id}')">Authorise payment</button>`;
+    else actions=`<button class="btn primary" onclick="advance('${c.id}')">Advance to “${esc(next)}”</button>`;
+  }
+  return `<button class="btn sm" onclick="go('claims')" style="margin-bottom:16px">← Back to claims</button>
+    <div class="card p" style="margin-bottom:16px">
+      <div class="row-between" style="margin-bottom:6px">
+        <div><span class="mono" style="font-weight:700;font-size:15px">${c.id}</span> · ${esc(c.type)}</div>
+        ${c.done?`<span class="badge b-ok"><span class="b-dot"></span>Paid · ${c.days} days</span>`:od?`<span class="badge b-bad"><span class="b-dot"></span>SLA breached — escalated</span>`:`<span class="badge b-info"><span class="b-dot"></span>${esc(curStage(c))}</span>`}
+      </div>
+      <div class="small muted" style="margin-bottom:16px">Contributor: ${esc(nm(c.who))} · submitted through the contributor portal</div>
+      ${tracker(c)}
+      ${od?`<div class="notice warn" style="margin-top:14px">${ICO.dot}<div><b>Automated escalation active.</b> This task has spent ${c.elapsed.toFixed(1)} business days at “${esc(curStage(c))}”, exceeding its ${SLA[curStage(c)]}-day target. A notification was raised to the supervisor.</div></div>`:''}
+      <div class="btn-row" style="margin-top:16px">${actions||'<span class="small muted">This role has read-only access to claim actions.</span>'}</div>
+    </div>
+    <div class="card"><div class="card-h"><h3>Claim timeline</h3></div>
+      <table><thead><tr><th>#</th><th>Stage</th><th>State</th></tr></thead><tbody>
+      ${c.stages.map((s,i)=>`<tr><td class="num">${i+1}</td><td>${esc(s)}</td>
+        <td>${i<c.idx?'<span class="badge b-ok"><span class="b-dot"></span>Complete</span>':i===c.idx&&!c.done?'<span class="badge b-warn"><span class="b-dot"></span>In progress</span>':c.done&&i===c.stages.length-1?'<span class="badge b-ok"><span class="b-dot"></span>Complete</span>':'<span class="badge b-mut">Pending</span>'}</td></tr>`).join('')}
+      </tbody></table></div>`;
+}
+function tracker(c){
+  return `<div class="tracker">${c.stages.map((s,i)=>{
+    const cls=c.done?'done':i<c.idx?'done':i===c.idx?('cur'+(isOverdue(c)?' overdue':'')):'';
+    const inner=(c.done||i<c.idx)?'✓':(i+1);
+    return `<div class="stage ${cls}"><div class="bar"></div><div class="node">${inner}</div>
+      <div class="s-name">${esc(s)}</div>${SLA[s]!=null?`<div class="s-sla">${SLA[s]}d SLA</div>`:''}</div>`;}).join('')}</div>`;
+}
+function advance(id){const c=state.claims.find(x=>x.id===id);const from=curStage(c);c.idx++;c.elapsed=0;
+  audit('Advanced claim',`${id}: ${from} → ${curStage(c)}`);toast(`${id} advanced to ${curStage(c)}`);render();}
+function authorise(id){const c=state.claims.find(x=>x.id===id);c.idx=c.stages.length-1;c.done=true;c.days=2.4;
+  audit('Authorised payment',`${id} · payment released`,{before:'Awaiting authorisation',after:'Paid'});toast(`${id} — payment authorised`);render();}
+
+/* ============ REMITTANCE ============ */
+function vRemittance(){
+  const R=state.remit;
+  let head=`<p class="section-sub">Contribution schedules are validated at the point of upload — errors are caught now, not years later at retirement.</p>`;
+  if(!R.loaded){
+    return head+`<div class="card p"><div class="notice info" style="margin-bottom:16px">${ICO.dot}<div>No schedule loaded. Load a sample employer schedule to validate it against live RSA records.</div></div>
+      <button class="btn primary" onclick="loadSchedule()">Load sample schedule</button></div>`;
+  }
+  const posted=R.rows.filter(r=>r.status==='posted'||r.status==='resolved').length;
+  const exc=R.rows.filter(r=>r.flag&&r.status!=='resolved'&&R.validated).length;
+  let b=head;
+  b+=`<div class="card" style="margin-bottom:16px"><div class="card-h">
+      <h3>${esc(R.employer)} — ${esc(R.period)}</h3>
+      <span class="hint">${R.rows.length} records</span></div>
+    <div class="card-b">
+    ${!R.validated?`<div class="btn-row"><button class="btn primary" onclick="validateSchedule()">Validate &amp; post</button>
+      <span class="small muted" style="align-self:center">Cross-references each record against the live RSA database.</span></div>`
+      :`<div class="grid cards-3" style="margin-bottom:4px">
+        ${kpi('Posted to RSA',posted,'credited automatically','up')}
+        ${kpi('Exceptions',exc,exc?'held for correction':'resolved',exc?'down':'up')}
+        ${kpi('Detected at','Upload','not at retirement','up')}</div>`}
+    </div></div>`;
+
+  b+=`<div class="card"><div class="card-h"><h3>Schedule records</h3>${R.validated?'<span class="hint">validated</span>':''}</div>
+    <table><thead><tr><th>RSA PIN</th><th>Name</th><th>Amount</th><th>Result</th><th></th></tr></thead><tbody>
+    ${R.rows.map((r,i)=>{
+      let st,act='';
+      if(!R.validated){st='<span class="badge b-mut">Pending</span>';}
+      else if(r.status==='resolved'){st='<span class="badge b-ok"><span class="b-dot"></span>Posted (resolved)</span>';}
+      else if(r.flag){st=`<span class="badge b-bad"><span class="b-dot"></span>${esc(r.flag)}</span>`;act=`<button class="btn sm" onclick="resolveRow(${i})">Resolve</button>`;}
+      else{st='<span class="badge b-ok"><span class="b-dot"></span>Posted</span>';}
+      return `<tr><td class="mono">${esc(r.pin)}</td><td>${esc(nm(r.name))}</td><td class="num">${naira(r.amt)}</td><td>${st}</td><td style="text-align:right">${act}</td></tr>`;
+    }).join('')}
+    </tbody></table></div>`;
+  if(R.validated&&exc>0) b+=`<div class="notice warn" style="margin-top:16px">${ICO.dot}<div><b>${exc} exception(s) held.</b> Valid records were credited immediately; flagged records are routed to a resolution workflow and the employer is notified to submit corrections.</div></div>`;
+  return b;
+}
+function loadSchedule(){state.remit.loaded=true;audit('Loaded schedule',`${state.remit.employer} — ${state.remit.period}`);render();}
+function validateSchedule(){const R=state.remit;R.validated=true;
+  R.rows.forEach(r=>r.status=r.flag?'exception':'posted');
+  const ok=R.rows.filter(r=>!r.flag).length,ex=R.rows.filter(r=>r.flag).length;
+  audit('Validated remittance',`${R.employer}: ${ok} posted, ${ex} exception(s)`);toast(`${ok} posted · ${ex} exceptions`);render();}
+function resolveRow(i){const r=state.remit.rows[i];r.status='resolved';
+  audit('Resolved exception',`${r.pin} (${r.flag}) corrected and posted`,{before:r.flag,after:'Posted'});toast('Record corrected and posted');render();}
+
+/* ============ APPROVALS / DATA ============ */
+function vApprovals(){
+  const pend=state.approvals.filter(a=>a.status==='pending');
+  let b=`<p class="section-sub">Contributor records with employer and servicing details. Contributor-initiated changes are held for review before they are committed.</p>`;
+  b+=`<div class="card" style="margin-bottom:16px"><div class="card-h"><h3>Contributor directory</h3><span class="hint">${(typeof PEOPLE!=='undefined'?PEOPLE.length:0)} records</span></div>
+    <div style="overflow-x:auto"><table><thead><tr>
+      <th>Contributor</th><th>RSA PIN</th><th>Employer</th><th>Email</th><th>Phone</th><th>Recapture status</th><th>Account officer</th><th>Officer email</th><th>Officer phone</th><th>Next of kin</th>
+    </tr></thead><tbody>
+    ${(typeof PEOPLE!=='undefined'?PEOPLE:[]).map(p=>`<tr>
+      <td>${esc(nm(p.name))}</td><td class="mono">${esc(p.pin)}</td><td>${esc(p.employer||'\u2014')}</td>
+      <td class="mono" style="font-size:11.5px">${esc(p.email||'\u2014')}</td><td class="mono">${esc(p.phone||'\u2014')}</td>
+      <td>${recapBadge(p.recaptureStatus)}</td>
+      <td>${esc(p.officer||'\u2014')}</td><td class="mono" style="font-size:11.5px">${esc(p.officerEmail||'\u2014')}</td>
+      <td class="mono">${esc(p.officerPhone||'\u2014')}</td>
+      <td>${p.nok?esc(nm(p.nok)):'<span class="badge b-mut">Not registered</span>'}</td>
+    </tr>`).join('')}
+    </tbody></table></div></div>`;
+  b+=`<h3 class="section-h" style="margin-top:6px;margin-bottom:10px">Pending change requests</h3>`;
+  if(!pend.length) b+=`<div class="notice ok" style="margin-bottom:16px">${ICO.dot}<div>No pending change requests. The approval queue is clear.</div></div>`;
+  b+=`<div class="stack">`;
+  state.approvals.forEach(a=>{
+    b+=`<div class="card p"><div class="row-between" style="margin-bottom:10px">
+      <div><span class="mono" style="font-weight:700">${a.id}</span> · ${esc(nm(a.who))}</div>
+      ${a.status==='pending'?'<span class="badge b-warn"><span class="b-dot"></span>Awaiting review</span>':a.status==='approved'?'<span class="badge b-ok"><span class="b-dot"></span>Approved</span>':'<span class="badge b-bad"><span class="b-dot"></span>Rejected</span>'}</div>
+      <dl class="kv"><dt>Field</dt><dd>${esc(a.field)}</dd>
+        <dt>Current value</dt><dd class="mono">${esc(a.old)}</dd>
+        <dt>Requested value</dt><dd class="mono">${esc(a.neu)}</dd>
+        <dt>Biometric re-check</dt><dd>${a.biometric?'<span class="badge b-info">Required</span>':'Not required'}</dd></dl>
+      ${a.status==='pending'?`<div class="btn-row" style="margin-top:14px">
+        <button class="btn gold" onclick="decide('${a.id}',true)">Approve &amp; commit</button>
+        <button class="btn" onclick="decide('${a.id}',false)">Reject</button></div>`:''}
+    </div>`;
+  });
+  b+=`</div>`;
+  return b;
+}
+function decide(id,ok){const a=state.approvals.find(x=>x.id===id);a.status=ok?'approved':'rejected';
+  (state.notices||[]).forEach(n=>{if(n.req===a.id)n.read=true;});
+  if(ok && a.field==='Bank account'){const per=(typeof PEOPLE!=='undefined'?PEOPLE:[]).find(x=>x.name===a.who); if(per) per.bankMasked=a.neu; if(typeof ME!=='undefined'&&ME.name===a.who) ME.bankMasked=a.neu;}
+  state.notices.unshift({to:a.who,req:a.id,kind:ok?'ok':'bad',ts:new Date(),read:false,
+    text: ok ? `Your ${a.field.toLowerCase()} update (${a.id}) was reviewed and approved — the change has been applied to your record.`
+             : `Your ${a.field.toLowerCase()} update (${a.id}) was reviewed and could not be approved. Please contact your account officer.`});
+  audit(ok?'Approved data change':'Rejected data change',`${a.id} · ${a.who} · ${a.field}`,ok?{before:a.old,after:a.neu}:null);
+  toast(ok?`${a.field} approved for ${nm(a.who)}`:`${a.id} rejected`);render();}
+
+function vUpdateData(){
+  return noticeBanner()+`<p class="section-sub">Request a change to your record. Submitted changes are sent to the contributions officer for review and authorization before they take effect.</p>
+  <div class="card p" style="max-width:560px">
+    <div class="field"><label for="f-name">Full name</label><input id="f-name" value="${nm(ME.name)}"></div>
+    <div class="field" id="wrap-acct"><label for="f-acct">Bank account number</label>
+      <input id="f-acct" inputmode="numeric" placeholder="10-digit NUBAN" value="">
+      <div class="err">Enter a valid 10-digit account number.</div>
+      <div class="help">Changing bank details requires biometric re-verification.</div></div>
+    <div class="field"><label for="f-nok">Next of kin</label><input id="f-nok" placeholder="Full name (optional)"></div>
+    <button class="btn primary" onclick="submitData()">Submit for approval</button>
+  </div>`;
+}
+function submitData(){
+  const acct=document.getElementById('f-acct').value.trim();
+  const wrap=document.getElementById('wrap-acct');
+  if(!/^\d{10}$/.test(acct)){wrap.classList.add('bad');document.getElementById('f-acct').focus();return;}
+  wrap.classList.remove('bad');
+  const id='REQ-'+Math.floor(510+Math.random()*80);
+  state.approvals.unshift({id,who:ME.name,field:'Bank account',old:ME.bankMasked,neu:acct.replace(/(\d{4})\d+(\d{2})/,'$1xxxx$2')+' (new)',status:'pending',biometric:true});
+  state.notices.unshift({to:ME.name,req:id,kind:'info',ts:new Date(),read:false,
+    text:`Your bank account update (${id}) has been sent to the contributions officer for review and authorization.`});
+  audit('Submitted data change',`${id} · Bank account update requested`);
+  toast('Sent to the contributions officer for review');go('dashboard');
+}
+
+/* ============ AUDIT / REPORTS ============ */
+/* ============ FULL RECORDS (operations officer / admin) ============ */
+const SENS=['Bank Account Number','Nin','BVN'];
+function maskNum(v){if(!v)return v;const d=String(v).replace(/\D/g,'');return d.length>=4?('\u2022\u2022\u2022\u2022'+d.slice(-4)):'\u2022\u2022\u2022\u2022';}
+function psur(s){if(!PSEUDO||!s)return s;const r=_pmap[String(s).trim().toLowerCase()];return r||s;}
+function vRecords(){
+  const fields=(typeof FIELDS!=='undefined'?FIELDS:[]);
+  const recs=(typeof RECORDS!=='undefined'?RECORDS:[]);
+  const cellVal=(h,v)=>{
+    if(v==null||v==='') return '\u2014';
+    if(PSEUDO&&SENS.includes(h)) return maskNum(v);
+    if(PSEUDO&&h==='Surname') return psur(v);
+    if(PSEUDO&&h==='Nok Name') return nm(v);
+    return String(v);
+  };
+  const monoRe=/pin|phone|email|balance|accrued|bank|nin|bvn|pen/i;
+  return `<p class="section-sub">Complete contributor records — every field held in the source template, for operational review. ${PSEUDO
+      ? 'Privacy mode is <b>on</b>: surnames and next-of-kin are pseudonymised and identifiers (bank account, NIN, BVN) are masked. Toggle it off in the top bar to reveal full values.'
+      : 'Privacy mode is <b>off</b>: all values shown in full.'}</p>
+    <div class="card"><div class="card-h"><h3>All records</h3><span class="hint">${recs.length} contributors · ${fields.length} fields</span></div>
+    <div style="overflow:auto;max-height:72vh"><table><thead><tr>
+      ${fields.map(h=>`<th style="white-space:nowrap;position:sticky;top:0;background:#fff;box-shadow:inset 0 -1px 0 var(--line)">${esc(h)}</th>`).join('')}
+    </tr></thead><tbody>
+    ${recs.map(row=>`<tr>${row.map((v,i)=>`<td style="white-space:nowrap" class="${monoRe.test(fields[i])?'mono':''}">${esc(cellVal(fields[i],v))}</td>`).join('')}</tr>`).join('')}
+    </tbody></table></div></div>`;
+}
+
+/* ============ UAT FEEDBACK (SUS) ============ */
+const SUS_ITEMS=[
+ "I think that I would like to use this system frequently.",
+ "I found the system unnecessarily complex.",
+ "I thought the system was easy to use.",
+ "I think that I would need the support of a technical person to be able to use this system.",
+ "I found the various functions in this system were well integrated.",
+ "I thought there was too much inconsistency in this system.",
+ "I would imagine that most people would learn to use this system very quickly.",
+ "I found the system very cumbersome to use.",
+ "I felt very confident using the system.",
+ "I needed to learn a lot of things before I could get going with this system."];
+function vFeedback(){
+  const rows=SUS_ITEMS.map((st,i)=>`<tr><td>${i+1}. ${esc(st)}</td>${[1,2,3,4,5].map(v=>`<td style="text-align:center"><input type="radio" name="sus${i}" value="${v}"></td>`).join('')}</tr>`).join('');
+  return `<p class="section-sub">System Usability Scale (SUS) — the standard 10-item evaluation instrument. Answer every item, then export your response to Excel and send it to the facilitator. 1 = Strongly disagree … 5 = Strongly agree.</p>
+    <div class="card p" style="margin-bottom:16px;max-width:820px">
+      <div class="grid" style="grid-template-columns:1fr 1fr;gap:14px">
+        <div class="field" style="margin:0"><label for="fb-code">Participant code</label><input id="fb-code" placeholder="e.g. C-014"></div>
+        <div class="field" style="margin:0"><label for="fb-role">Role group</label>
+          <select id="fb-role"><option>Contributor</option><option>Operations staff</option><option>Compliance officer</option><option>IT administrator</option></select></div>
+      </div>
+    </div>
+    <div class="card" style="max-width:820px"><div class="card-h"><h3>Usability statements</h3><span class="hint">1 disagree · 5 agree</span></div>
+      <table><thead><tr><th>Statement</th><th style="text-align:center">1</th><th style="text-align:center">2</th><th style="text-align:center">3</th><th style="text-align:center">4</th><th style="text-align:center">5</th></tr></thead>
+      <tbody>${rows}</tbody></table>
+      <div class="card-b"><div class="btn-row"><button class="btn gold" onclick="submitSUS()">Compute score &amp; export Excel</button></div>
+        <div id="susResult" class="small" style="margin-top:12px"></div></div>
+    </div>`;
+}
+function submitSUS(){
+  const vals=[];
+  for(let i=0;i<10;i++){const sel=document.querySelector('input[name="sus'+i+'"]:checked');
+    if(!sel){document.getElementById('susResult').innerHTML='<span style="color:var(--bad)">Please answer all ten items before exporting.</span>';return;}
+    vals.push(parseInt(sel.value,10));}
+  let sum=0; vals.forEach((v,i)=>{sum += (i%2===0)?(v-1):(5-v);});
+  const score=Math.round(sum*2.5*10)/10;
+  const code=(document.getElementById('fb-code').value||'').trim()||'\u2014';
+  const role=document.getElementById('fb-role').value;
+  const out=[['PWAP UAT — System Usability Scale response'],['Participant code',code],['Role group',role],['Recorded',fmtT(new Date())],[],
+    ['Item','Response (1-5)'], ...SUS_ITEMS.map((st,i)=>['Q'+(i+1)+'. '+st, vals[i]]), [], ['SUS score (0-100)', score]];
+  downloadXlsx('SUS response', out, 'PWAP_SUS_'+code.replace(/[^A-Za-z0-9]+/g,'_')+'.xlsx');
+  audit('UAT SUS submitted', code+' ('+role+') · SUS '+score);
+  const band=score>=80?'excellent':score>=70?'good':score>=50?'marginal':'poor';
+  document.getElementById('susResult').innerHTML='Your SUS score: <b>'+score+'</b> / 100 ('+band+'). Excel file downloaded — please send it to the facilitator.';
+  toast('SUS '+score+' — Excel downloaded');
+}
+
+function vAudit(){
+  return `<p class="section-sub">Append-only record of every transactional action. Entries are immutable and retained for a minimum of seven years.</p>
+  <div class="card"><div class="card-h"><h3>Event log</h3><span class="badge b-mut">immutable · newest first</span></div>
+    <table><thead><tr><th>Timestamp</th><th>Actor</th><th>Action</th><th>Detail</th><th>Before → After</th></tr></thead><tbody>
+    ${state.audit.map(e=>`<tr>
+      <td class="mono" style="white-space:nowrap">${fmtT(e.t)}</td>
+      <td>${esc(nm(e.who))}</td><td>${esc(e.act)}</td><td>${esc(e.det)}</td>
+      <td class="small muted">${e.before?`${esc(e.before)} → ${esc(e.after)}`:'—'}</td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+function vReports(){
+  const exc=state.remit.validated?state.remit.rows.filter(r=>r.flag&&r.status!=='resolved'):[];
+  return `<p class="section-sub">Generate supervisory reports in the format expected by PenCom.</p>
+  <div class="grid cards-3" style="margin-bottom:16px">
+    ${kpi('Audit entries',state.audit.length,'this session')}
+    ${kpi('Open exceptions',exc.length,'in current batch',exc.length?'down':'up')}
+    ${kpi('Retention','7 yrs','per PRA 2014')}</div>
+  <div class="card p"><div class="row-between">
+    <div><b>PenCom exception report</b><div class="small muted">Record-level exceptions with categorisation and status — exported as an Excel workbook.</div></div>
+    <button class="btn gold" onclick="downloadReport()">Generate Excel report</button></div></div>`;
+}
+/* ---- minimal offline .xlsx writer (no external library) ---- */
+const _crcTab=(()=>{const t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);t[n]=c>>>0;}return t;})();
+function crc32(u8){let c=0xFFFFFFFF;for(let i=0;i<u8.length;i++)c=_crcTab[(c^u8[i])&0xFF]^(c>>>8);return (c^0xFFFFFFFF)>>>0;}
+function strBytes(s){return new TextEncoder().encode(s);}
+function zipStore(files){
+  const u16=n=>[n&255,(n>>8)&255], u32=n=>[n&255,(n>>8)&255,(n>>16)&255,(n>>24)&255];
+  const parts=[], central=[]; let offset=0;
+  for(const f of files){
+    const nameB=strBytes(f.name), data=f.bytes, crc=crc32(data);
+    parts.push(new Uint8Array([0x50,0x4b,0x03,0x04,...u16(20),...u16(0),...u16(0),...u16(0),...u16(0),...u32(crc),...u32(data.length),...u32(data.length),...u16(nameB.length),...u16(0)]));
+    parts.push(nameB); parts.push(data);
+    central.push(new Uint8Array([0x50,0x4b,0x01,0x02,...u16(20),...u16(20),...u16(0),...u16(0),...u16(0),...u16(0),...u32(crc),...u32(data.length),...u32(data.length),...u16(nameB.length),...u16(0),...u16(0),...u16(0),...u16(0),...u32(0),...u32(offset)]));
+    central.push(nameB);
+    offset+=30+nameB.length+data.length;
+  }
+  let cenLen=0; central.forEach(c=>cenLen+=c.length);
+  const end=new Uint8Array([0x50,0x4b,0x05,0x06,...u16(0),...u16(0),...u16(files.length),...u16(files.length),...u32(cenLen),...u32(offset),...u16(0)]);
+  const all=[...parts,...central,end]; let total=0; all.forEach(a=>total+=a.length);
+  const out=new Uint8Array(total); let p=0; all.forEach(a=>{out.set(a,p);p+=a.length;});
+  return out;
+}
+function xlsxBytes(sheetName, rows){
+  const x=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const colName=n=>{let s='';n++;while(n>0){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=(n-m-1)/26;}return s;};
+  let body='';
+  rows.forEach((row,ri)=>{
+    let cells='';
+    row.forEach((val,ci)=>{
+      const ref=colName(ci)+(ri+1);
+      if(typeof val==='number'&&isFinite(val)) cells+=`<c r="${ref}"><v>${val}</v></c>`;
+      else cells+=`<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${x(val==null?'':val)}</t></is></c>`;
+    });
+    body+=`<row r="${ri+1}">${cells}</row>`;
+  });
+  const sheet=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${body}</sheetData></worksheet>`;
+  const ct=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>`;
+  const rels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
+  const wb=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${x(sheetName).slice(0,31)}" sheetId="1" r:id="rId1"/></sheets></workbook>`;
+  const wbRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>`;
+  return zipStore([
+    {name:'[Content_Types].xml',bytes:strBytes(ct)},
+    {name:'_rels/.rels',bytes:strBytes(rels)},
+    {name:'xl/workbook.xml',bytes:strBytes(wb)},
+    {name:'xl/_rels/workbook.xml.rels',bytes:strBytes(wbRels)},
+    {name:'xl/worksheets/sheet1.xml',bytes:strBytes(sheet)},
+  ]);
+}
+function downloadXlsx(sheetName, rows, filename){
+  const blob=new Blob([xlsxBytes(sheetName,rows)],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1500);
+}
+function reportData(){
+  const R=state.remit;
+  const exc=R.validated?R.rows.filter(r=>r.flag):[];
+  const rows=[];
+  rows.push(['PWAP — PenCom Exception Report']);
+  rows.push(['Employer', R.employer]);
+  rows.push(['Period', R.period]);
+  rows.push(['Generated', fmtT(new Date()), 'By', ROLES[state.role].name]);
+  rows.push(['Records in batch', R.rows.length, 'Exceptions', exc.length]);
+  rows.push([]);
+  rows.push(['RSA PIN','Contributor','Amount (NGN)','Exception category','Status']);
+  exc.forEach(r=>rows.push([r.pin, nm(r.name), r.amt, r.flag, r.status==='resolved'?'Resolved':'Open']));
+  if(!R.validated) rows.push(['No validated remittance batch — validate a schedule to populate exceptions.']);
+  else if(!exc.length) rows.push(['No exceptions in the current validated batch.']);
+  return {rows, exc, R};
+}
+function downloadReport(){
+  const {rows, exc, R}=reportData();
+  const period=String(R.period).replace(/\s+/g,'_');
+  downloadXlsx('Exception Report', rows, `PWAP_PenCom_Exception_Report_${period}.xlsx`);
+  audit('Generated report',`PenCom exception report (Excel) — ${R.period} · ${exc.length} exception(s)`);
+  toast('Excel report downloaded (.xlsx)');
+  const prev=`<p class="small muted">Generated ${fmtT(new Date())} · ${esc(ROLES[state.role].name)}</p>
+    <dl class="kv" style="margin-bottom:12px"><dt>Employer</dt><dd>${esc(R.employer)}</dd><dt>Period</dt><dd>${esc(R.period)}</dd><dt>Exceptions</dt><dd>${exc.length}</dd></dl>
+    ${exc.length?`<table><thead><tr><th>RSA PIN</th><th>Category</th><th>Status</th></tr></thead><tbody>${exc.map(r=>`<tr><td class="mono">${esc(r.pin)}</td><td>${esc(r.flag)}</td><td>${r.status==='resolved'?'Resolved':'Open'}</td></tr>`).join('')}</tbody></table>`:`<div class="notice ok">${ICO.dot}<div>No exceptions in the current validated batch.</div></div>`}
+    <div class="btn-row" style="margin-top:16px"><button class="btn gold" onclick="downloadReport()">Download Excel again</button></div>
+    <p class="small muted" style="margin-top:10px">Saved as an .xlsx workbook — opens directly in Microsoft Excel.</p>`;
+  showModal('PenCom exception report — Excel generated', prev);
+}
+
+/* ============ MODAL / ABOUT ============ */
+function showModal(t,html){document.getElementById('modalTitle').textContent=t;document.getElementById('modalBody').innerHTML=html;document.getElementById('modalBg').classList.add('show');}
+function closeModal(){document.getElementById('modalBg').classList.remove('show');}
+function openAbout(){
+  showModal('System & technology',`
+    <p class="small muted">Pension Workflow Automation Platform — a web-based, ITIL 4-governed system that digitises the internal administrative workflows of a Nigerian Pension Fund Administrator.</p>
+    <h4 style="font-family:var(--serif);color:var(--ink);margin:16px 0 8px">Technology stack</h4>
+    <dl class="kv">
+      <dt>Backend</dt><dd>Python 3.11 · Django 4.2 LTS · Django REST Framework</dd>
+      <dt>Frontend</dt><dd>React.js 18</dd>
+      <dt>Workflow engine</dt><dd>Camunda BPM 7 (BPMN 2.0)</dd>
+      <dt>Database</dt><dd>Oracle 19c (TDE, FGA) · PostgreSQL 15 verified alternative</dd>
+      <dt>Automation</dt><dd>UiPath (OCR for legacy schedules)</dd>
+      <dt>ITSM</dt><dd>Jira Service Management</dd>
+      <dt>Serving</dt><dd>Nginx · Docker Compose</dd>
+    </dl>
+    <h4 style="font-family:var(--serif);color:var(--ink);margin:16px 0 8px">Deployment host</h4>
+    <dl class="kv">
+      <dt>OS</dt><dd>Ubuntu 22.04 LTS</dd>
+      <dt>Compute</dt><dd>12-core CPU · 32 GB RAM</dd>
+      <dt>Storage</dt><dd>1 TB NVMe SSD · RAID-10 backup</dd>
+      <dt>Design principle</dt><dd>Compliance by design — encryption &amp; audit configured from first setup</dd>
+    </dl>
+    <div class="notice info" style="margin-top:16px">${ICO.dot}<div>This browser prototype demonstrates the workflows and interface. Contributor surnames are pseudonymised for presentation (toggle in the top bar); bank account, NIN/BVN and phone are masked or withheld per the NDPR. Data shown is illustrative.</div></div>`);
+}
+
+/* ---------- charts ---------- */
+function barChart(){
+  const data=[["Manual baseline",43,"var(--bad)"],["Regulatory target",5,"var(--muted)"],["PWAP (pilot)",2.4,"var(--gold)"]];
+  const max=45;
+  return `<div style="display:flex;flex-direction:column;gap:12px;padding:4px 0">${data.map(([l,v,c])=>`
+    <div><div class="row-between small" style="margin-bottom:4px"><span>${l}</span><span class="num" style="color:${c==='var(--muted)'?'var(--muted)':'var(--ink)'}">${v} days</span></div>
+    <div style="height:12px;background:var(--line-2);border-radius:8px;overflow:hidden"><div style="height:100%;width:${Math.max(3,v/max*100)}%;background:${c};border-radius:8px"></div></div></div>`).join('')}
+    </div><div class="legend"><span class="muted">Working days, end-to-end. Illustrative.</span></div>`;
+}
+function stageChart(){
+  const stages=["Identity verification","Document completeness","Accrued rights (COBRA)","Beneficiary verification","Departmental review","Payment authorisation"];
+  const counts={};state.claims.filter(c=>!c.done).forEach(c=>{const s=curStage(c);counts[s]=(counts[s]||0)+1;});
+  const max=Math.max(1,...Object.values(counts));
+  const present=stages.filter(s=>counts[s]);
+  if(!present.length) return '<p class="muted small">No active claims.</p>';
+  return `<div style="display:flex;flex-direction:column;gap:10px">${present.map(s=>`
+    <div><div class="row-between small" style="margin-bottom:4px"><span>${s}</span><span class="num">${counts[s]}</span></div>
+    <div style="height:10px;background:var(--line-2);border-radius:8px;overflow:hidden"><div style="height:100%;width:${counts[s]/max*100}%;background:var(--ink-2);border-radius:8px"></div></div></div>`).join('')}</div>`;
+}
+
+/* ============ INIT ============ */
+initLogin();
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+</script>
+</body>
+</html>
