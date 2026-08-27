@@ -1,0 +1,3 @@
+[run]
+source = contributors,remittance,claims,audit,identity,integration,core
+omit = */test_*.py,*/__init__.py,*/apps.py,config/*
